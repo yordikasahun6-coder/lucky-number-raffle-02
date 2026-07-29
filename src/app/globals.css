@@ -1,0 +1,69 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+body {
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+}
+body {
+  font-family: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+  background: #fbf8ef;
+}
+
+.ticket-stub {
+  position: relative;
+  background: #ffffff;
+  border-radius: 24px;
+  border: 1.5px solid #eae1c4;
+  box-shadow:
+    0 2px 0 #eae1c4,
+    0 8px 24px rgba(15, 81, 50, 0.06);
+}
+
+.ticket-divider {
+  position: relative;
+  height: 0;
+  border-top: 2px dashed #e5dcc3;
+  margin: 0 -1.5rem;
+}
+
+.ticket-divider::before,
+.ticket-divider::after {
+  content: "";
+  position: absolute;
+  top: -10px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fbf8ef;
+  border: 1.5px solid #eae1c4;
+}
+
+.ticket-divider::before {
+  left: -10px;
+}
+.ticket-divider::after {
+  right: -10px;
+}
