@@ -24,10 +24,10 @@ export default function PaymentAccountCard({
   const { t } = useLanguage();
 
   return (
-    <div className="rounded-2xl border border-[#EAE1C4] bg-[#FFFEFA] overflow-hidden">
+    <div className="hover-lift rounded-2xl border border-[#EAE1C4] bg-[#FFFEFA] overflow-hidden">
       <button
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center gap-3 px-5 py-4 hover:bg-[#FBF8EF] transition text-left"
+        className="press-scale w-full flex items-center gap-3 px-5 py-4 hover:bg-[#FBF8EF] transition text-left"
       >
         {account.logo_url ? (
           <img
@@ -42,14 +42,14 @@ export default function PaymentAccountCard({
           {account.name}
         </span>
         <span
-          className={`text-[#E0A72E] text-xs transition-transform ${open ? "rotate-180" : ""}`}
+          className={`text-[#E0A72E] text-xs transition-transform duration-300 ${open ? "rotate-180" : ""}`}
         >
           ▾
         </span>
       </button>
 
-      {open && (
-        <>
+      <div className={`expand-panel ${open ? "open" : ""}`}>
+        <div>
           <div className="ticket-divider px-6" />
           <div className="px-6 pb-6 pt-5">
             <div className="flex items-baseline justify-between mb-5">
@@ -94,8 +94,8 @@ export default function PaymentAccountCard({
               )}
             </div>
           </div>
-        </>
-      )}
+        </div>
+      </div>
     </div>
   );
 }

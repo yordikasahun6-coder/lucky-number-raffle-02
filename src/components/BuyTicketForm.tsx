@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
+import ScreenshotUpload from "./ScreenshotUpload";
 
 type Account = { id: string; name: string; logo_url: string | null };
 
@@ -124,28 +125,14 @@ export default function BuyTicketForm({ accounts }: { accounts: Account[] }) {
         )}
       </div>
 
-      <div>
-        <label className="block text-sm font-medium text-[#374151] mb-1.5">
-          {t("screenshotLabel")}{" "}
-          <span className="text-[#9CA3AF] font-normal">
-            {t("screenshotOptional")}
-          </span>
-        </label>
-        <input
-          type="file"
-          accept="image/*"
-          onChange={(e) => setScreenshot(e.target.files?.[0] || null)}
-          className="w-full text-sm text-[#6B7280] file:mr-4 file:rounded-lg file:border-0 file:bg-[#F3F4F6] file:px-4 file:py-2 file:text-sm"
-        />
-        <p className="text-xs text-[#9CA3AF] mt-1.5">{t("screenshotHint")}</p>
-      </div>
+      <ScreenshotUpload file={screenshot} onChange={setScreenshot} />
 
       {error && <p className="text-sm text-red-600">{error}</p>}
 
       <button
         type="submit"
         disabled={submitting}
-        className="w-full rounded-lg bg-[#16A34A] text-white font-semibold py-3 disabled:opacity-50"
+        className="press-scale w-full rounded-lg bg-[#16A34A] text-white font-semibold py-3 disabled:opacity-50 hover:bg-[#15803D] hover:shadow-lg hover:shadow-[#16A34A]/20 transition-all"
       >
         {submitting ? t("submitting") : t("submitButton")}
       </button>
