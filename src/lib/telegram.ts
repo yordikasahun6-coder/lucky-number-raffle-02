@@ -182,20 +182,53 @@ export async function notifyCustomerNumberClaimed(params: {
   ticketNumber: number;
   remainingCredits: number;
   drawDateText: string;
+  allNumbers: number[];
+  phone: string;
 }) {
   const token = process.env.TELEGRAM_BOT_TOKEN;
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
   if (!token) return;
 
+  const isFinal = params.remainingCredits === 0 && params.allNumbers.length > 0;
+
+  const numbersLine =
+    isFinal && params.allNumbers.length > 1
+      ? `Your Tickets: *${params.allNumbers.map((n) => `#${n}`).join(", ")}*\n`
+      : `Ticket Number: *#${params.ticketNumber}*\n`;
+
   const text =
     `🎟️ *Your lucky number is locked in!*\n\n` +
-    `Ticket Number: *#${params.ticketNumber}*\n` +
+    numbersLine +
     `Draw Date: *${params.drawDateText}*\n\n` +
-    `💡 Save this message — this is your proof of your number. No need to remember it yourself, just scroll back to this chat anytime.\n\n` +
+    `💡 Save this message — this is your proof of your number${isFinal && params.allNumbers.length > 1 ? "s" : ""}. No need to remember it yourself, just scroll back to this chat anytime.\n\n` +
     (params.remainingCredits > 0
       ? `You still have ${params.remainingCredits} more ticket${params.remainingCredits > 1 ? "s" : ""} to claim — go back to the site to pick the rest.\n\n`
       : "") +
     `Good luck! 🍀`;
+
+  const buttons = [
+    isFinal
+      ? [
+          {
+            text: "📥 View & Download My Tickets",
+            url: `${siteUrl}/pick-number?phone=${encodeURIComponent(params.phone)}`,
+          },
+        ]
+      : [
+          {
+            text: "🔗 Pick Another Number",
+            url: `${siteUrl}/pick-number?phone=${encodeURIComponent(params.phone)}`,
+          },
+        ],
+    [{ text: "🏠 Visit Homepage", url: siteUrl }],
+    [{ text: "🎟️ Buy Another Ticket", callback_data: "buy_another" }],
+    [
+      {
+        text: "💬 Contact Us",
+        url: `https://t.me/${process.env.TELEGRAM_SUPPORT_USERNAME || ""}`,
+      },
+    ],
+  ];
 
   try {
     await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
@@ -205,18 +238,7 @@ export async function notifyCustomerNumberClaimed(params: {
         chat_id: params.chatId,
         text,
         parse_mode: "Markdown",
-        reply_markup: {
-          inline_keyboard: [
-            [{ text: "🏠 Visit Homepage", url: siteUrl }],
-            [{ text: "🎟️ Buy Another Ticket", callback_data: "buy_another" }],
-            [
-              {
-                text: "💬 Contact Us",
-                url: `https://t.me/${process.env.TELEGRAM_SUPPORT_USERNAME || ""}`,
-              },
-            ],
-          ],
-        },
+        reply_markup: { inline_keyboard: buttons },
       }),
     });
   } catch (err) {

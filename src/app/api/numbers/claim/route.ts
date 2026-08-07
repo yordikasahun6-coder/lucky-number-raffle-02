@@ -149,11 +149,25 @@ async function sendClaimNotification(phone: string, ticketNumber: number) {
         })
       : "To be announced";
 
+    let allNumbers: number[] = [ticketNumber];
+    if (remainingCredits === 0) {
+      const { data: myNumbers } = await supabaseAdmin
+        .from("numbers")
+        .select("number")
+        .eq("phone_number", phone.trim())
+        .order("number", { ascending: true });
+      if (myNumbers && myNumbers.length > 0) {
+        allNumbers = myNumbers.map((n) => n.number);
+      }
+    }
+
     await notifyCustomerNumberClaimed({
       chatId: recentPayment.telegram_chat_id,
       ticketNumber,
       remainingCredits,
       drawDateText,
+      allNumbers,
+      phone: phone.trim(),
     });
   } catch (err) {
     console.log("sendClaimNotification failed:", err);
