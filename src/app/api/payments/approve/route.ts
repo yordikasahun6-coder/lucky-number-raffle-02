@@ -49,6 +49,7 @@ export async function POST(request: NextRequest) {
     if (payment?.telegram_chat_id) {
       await notifyCustomerTelegram({
         chatId: payment.telegram_chat_id,
+        phone: payment.phone_number,
         status: "rejected",
       });
     }
@@ -127,6 +128,7 @@ export async function POST(request: NextRequest) {
     if (payment?.telegram_chat_id) {
       await notifyCustomerTelegram({
         chatId: payment.telegram_chat_id,
+        phone: payment.phone_number,
         status: "approved",
         ticketCount: count,
       });

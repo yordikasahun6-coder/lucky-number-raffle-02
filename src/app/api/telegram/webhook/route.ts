@@ -59,12 +59,81 @@ async function startSession(chatId: number) {
 export async function POST(request: NextRequest) {
   const update = await request.json();
 
-  // Handle payment-method button taps
   if (update.callback_query) {
     const cb = update.callback_query;
     const chatId = cb.message.chat.id;
     await answerCallback(cb.id);
 
+    // "Buy another ticket" — reuse their name/phone from their last
+    // submission, skip straight to payment method selection.
+    if (cb.data === "buy_another" || cb.data === "buy_another_fresh") {
+      const { data: lastPayment } = await supabaseAdmin
+        .from("payments")
+        .select("customer_name, phone_number")
+        .eq("telegram_chat_id", chatId)
+        .order("submitted_at", { ascending: false })
+        .limit(1)
+        .single();
+
+      if (!lastPayment) {
+        await sendBotMessage(
+          chatId,
+          "I don't have your details on file yet. Let's start fresh — what's your full name?",
+        );
+        await supabaseAdmin
+          .from("telegram_sessions")
+          .upsert({
+            chat_id: chatId,
+            step: "name",
+            name: null,
+            phone: null,
+            method_id: null,
+            method_name: null,
+            updated_at: new Date().toISOString(),
+          });
+        return NextResponse.json({ ok: true });
+      }
+
+      const { data: accounts } = await supabaseAdmin
+        .from("payment_accounts")
+        .select("id, name")
+        .eq("active", true);
+
+      await supabaseAdmin.from("telegram_sessions").upsert({
+        chat_id: chatId,
+        step: "method",
+        name: lastPayment.customer_name,
+        phone: lastPayment.phone_number,
+        method_id: null,
+        method_name: null,
+        method_options: accounts ? JSON.stringify(accounts) : null,
+        updated_at: new Date().toISOString(),
+      });
+
+      if (accounts && accounts.length > 0) {
+        const keyboard = accounts.map((a, i) => ({
+          text: a.name,
+          data: `m${i}`,
+        }));
+        await sendBotMessage(
+          chatId,
+          `Welcome back, ${lastPayment.customer_name}! 🎟️\n\nWhich payment method did you use this time?`,
+          keyboard,
+        );
+      } else {
+        await supabaseAdmin
+          .from("telegram_sessions")
+          .update({ step: "photo", method_name: "Telegram" })
+          .eq("chat_id", chatId);
+        await sendBotMessage(
+          chatId,
+          `Welcome back, ${lastPayment.customer_name}! Now send a photo of your payment screenshot.`,
+        );
+      }
+      return NextResponse.json({ ok: true });
+    }
+
+    // Payment-method button tap (normal flow, name/phone already known)
     const { data: session } = await supabaseAdmin
       .from("telegram_sessions")
       .select("method_options")

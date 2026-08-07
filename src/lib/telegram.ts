@@ -114,24 +114,66 @@ export async function updateAdminTelegramStatus(params: {
 }
 export async function notifyCustomerTelegram(params: {
   chatId: number;
+  phone: string;
   status: "approved" | "rejected";
   ticketCount?: number;
 }) {
   const token = process.env.TELEGRAM_BOT_TOKEN;
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
   if (!token) return;
 
-  const text =
-    params.status === "approved"
-      ? `🎉 Great news! Your payment has been approved.\n\nYou can now pick your lucky number${params.ticketCount && params.ticketCount > 1 ? `s (you have ${params.ticketCount})` : ""} on the website — go to "Check Your Status" and enter your phone number to continue.`
-      : `⚠️ We couldn't verify your payment. Please double check and resubmit, or contact us for help.`;
+  if (params.status === "approved") {
+    const text =
+      `🎉 *Great news! Your payment has been approved.*\n\n` +
+      `You have ${params.ticketCount || 1} ticket${(params.ticketCount || 1) > 1 ? "s" : ""} ready to claim.\n\n` +
+      `📌 *A few things to know:*\n` +
+      `• Once you confirm a number, it's final — no changes or refunds after that.\n` +
+      `• Keep this chat — you can always come back here to buy another ticket.\n` +
+      `• The winning number is drawn live and announced publicly.\n\n` +
+      `Tap below to pick your lucky number, or buy another ticket right here.`;
 
-  try {
-    await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ chat_id: params.chatId, text }),
-    });
-  } catch (err) {
-    console.log("notifyCustomerTelegram failed:", err);
+    try {
+      await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: params.chatId,
+          text,
+          parse_mode: "Markdown",
+          reply_markup: {
+            inline_keyboard: [
+              [
+                {
+                  text: "🔗 Pick Your Lucky Number",
+                  url: `${siteUrl}/pick-number?phone=${params.phone}`,
+                },
+              ],
+              [{ text: "🎟️ Buy Another Ticket", callback_data: "buy_another" }],
+            ],
+          },
+        }),
+      });
+    } catch (err) {
+      console.log("notifyCustomerTelegram failed:", err);
+    }
+  } else {
+    const text = `⚠️ We couldn't verify your payment. Please double check and resubmit, or contact us for help.`;
+    try {
+      await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: params.chatId,
+          text,
+          reply_markup: {
+            inline_keyboard: [
+              [{ text: "🔄 Try Again", callback_data: "buy_another_fresh" }],
+            ],
+          },
+        }),
+      });
+    } catch (err) {
+      console.log("notifyCustomerTelegram failed:", err);
+    }
   }
 }
