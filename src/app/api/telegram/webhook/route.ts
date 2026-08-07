@@ -2,83 +2,184 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { notifyAdminTelegram } from "@/lib/telegram";
 
-function parseField(text: string, label: string): string {
-  const regex = new RegExp(`${label}:\\s*(.+)`, "i");
-  const match = text.match(regex);
-  return match ? match[1].trim() : "";
+async function sendBotMessage(
+  chatId: number,
+  text: string,
+  keyboard?: { text: string; data: string }[],
+) {
+  const body: any = { chat_id: chatId, text };
+  if (keyboard) {
+    body.reply_markup = {
+      inline_keyboard: keyboard.map((k) => [
+        { text: k.text, callback_data: k.data },
+      ]),
+    };
+  }
+  await fetch(
+    `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    },
+  );
+}
+
+async function answerCallback(callbackQueryId: string) {
+  await fetch(
+    `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/answerCallbackQuery`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ callback_query_id: callbackQueryId }),
+    },
+  );
+}
+
+async function startSession(chatId: number) {
+  await supabaseAdmin
+    .from("telegram_sessions")
+    .upsert({
+      chat_id: chatId,
+      step: "name",
+      name: null,
+      phone: null,
+      method_id: null,
+      method_name: null,
+      updated_at: new Date().toISOString(),
+    });
+  await sendBotMessage(
+    chatId,
+    "👋 Let's get your ticket submitted!\n\nFirst — what's your full name?",
+  );
 }
 
 export async function POST(request: NextRequest) {
   const update = await request.json();
 
+  // Handle payment-method button taps
+  if (update.callback_query) {
+    const cb = update.callback_query;
+    const chatId = cb.message.chat.id;
+    await answerCallback(cb.id);
+
+    const [methodId, methodName] = cb.data.split("|");
+
+    await supabaseAdmin
+      .from("telegram_sessions")
+      .update({
+        step: "photo",
+        method_id: methodId === "none" ? null : methodId,
+        method_name: methodName,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("chat_id", chatId);
+
+    await sendBotMessage(
+      chatId,
+      `✅ Got it — ${methodName}.\n\nLast step: send a photo of your payment screenshot.`,
+    );
+    return NextResponse.json({ ok: true });
+  }
+
   const message = update.message;
   if (!message) return NextResponse.json({ ok: true });
 
   const chatId = message.chat.id;
-  const text: string = message.caption || message.text || "";
+  const text: string = message.text || "";
   const photo = message.photo;
 
-  // First-time users tapping "Start" only send /start — Telegram drops
-  // any pre-filled text for brand-new conversations. Give them clear
-  // instructions instead of silently doing nothing.
-  if (text.trim() === "/start" || text.trim() === "") {
-    await sendBotReply(
+  if (text.trim() === "/start") {
+    await startSession(chatId);
+    return NextResponse.json({ ok: true });
+  }
+
+  const { data: session } = await supabaseAdmin
+    .from("telegram_sessions")
+    .select("*")
+    .eq("chat_id", chatId)
+    .single();
+
+  if (!session) {
+    await startSession(chatId);
+    return NextResponse.json({ ok: true });
+  }
+
+  if (session.step === "name") {
+    if (!text.trim()) {
+      await sendBotMessage(chatId, "Please type your full name as text.");
+      return NextResponse.json({ ok: true });
+    }
+    await supabaseAdmin
+      .from("telegram_sessions")
+      .update({
+        name: text.trim(),
+        step: "phone",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("chat_id", chatId);
+    await sendBotMessage(
       chatId,
-      `👋 Hi! To submit your payment, send ONE message that includes a photo of your payment screenshot with this caption:\n\n` +
-        `Name: [your full name]\n` +
-        `Phone: [your phone number]\n` +
-        `Payment method: [e.g. CBE, Telebirr]\n\n` +
-        `📌 Tip: attach the photo first, then type the caption before sending — that way it all arrives together.`,
+      `Thanks, ${text.trim()}!\n\nNow, what's your phone number? (e.g. 0912345678)`,
     );
     return NextResponse.json({ ok: true });
   }
 
-  // Ignore messages that don't look like our template at all
-  if (!text.includes("Name:") && !text.includes("Phone:")) {
-    await sendBotReply(
-      chatId,
-      `⚠️ I couldn't find your name and phone number in that message. Please send your payment screenshot with a caption like:\n\n` +
-        `Name: [your full name]\n` +
-        `Phone: [your phone number]\n` +
-        `Payment method: [e.g. CBE, Telebirr]`,
-    );
+  if (session.step === "phone") {
+    const digitsOnly = text.replace(/[^0-9]/g, "");
+    if (!/^0[97]\d{8}$/.test(digitsOnly)) {
+      await sendBotMessage(
+        chatId,
+        "That doesn't look like a valid 10-digit phone number. Please try again (e.g. 0912345678).",
+      );
+      return NextResponse.json({ ok: true });
+    }
+
+    const { data: accounts } = await supabaseAdmin
+      .from("payment_accounts")
+      .select("id, name")
+      .eq("active", true);
+    await supabaseAdmin
+      .from("telegram_sessions")
+      .update({
+        phone: digitsOnly,
+        step: "method",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("chat_id", chatId);
+
+    if (accounts && accounts.length > 0) {
+      const keyboard = accounts.map((a) => ({
+        text: a.name,
+        data: `${a.id}|${a.name}`,
+      }));
+      await sendBotMessage(
+        chatId,
+        "Which payment method did you use?",
+        keyboard,
+      );
+    } else {
+      await supabaseAdmin
+        .from("telegram_sessions")
+        .update({ step: "photo", method_name: "Telegram" })
+        .eq("chat_id", chatId);
+      await sendBotMessage(
+        chatId,
+        "Now send a photo of your payment screenshot.",
+      );
+    }
     return NextResponse.json({ ok: true });
   }
 
-  if (!photo) {
-    await sendBotReply(
-      chatId,
-      `📷 I got your details, but no photo came with it. Please resend with your payment screenshot attached and the same caption.`,
-    );
-    return NextResponse.json({ ok: true });
-  }
+  if (session.step === "photo") {
+    if (!photo || photo.length === 0) {
+      await sendBotMessage(
+        chatId,
+        "Please send a photo of your payment screenshot to finish.",
+      );
+      return NextResponse.json({ ok: true });
+    }
 
-  const nameRaw = parseField(text, "Name");
-  const phoneRaw = parseField(text, "Phone");
-  const methodName = parseField(text, "Payment method");
-
-  const digitsOnly = phoneRaw.replace(/[^0-9]/g, "");
-  const validPhone = /^0[97]\d{8}$/.test(digitsOnly);
-
-  if (!nameRaw || nameRaw === "_____" || !validPhone) {
-    await sendBotReply(
-      chatId,
-      "⚠️ I couldn't read your name or phone number clearly. Please use the 'Send on Telegram' button from the website so the details are filled in correctly, then attach your screenshot.",
-    );
-    return NextResponse.json({ ok: true });
-  }
-
-  // Try to match the typed method name to a real payment_accounts row
-  const { data: accounts } = await supabaseAdmin
-    .from("payment_accounts")
-    .select("id, name");
-  const matchedAccount = accounts?.find(
-    (a) => a.name.toLowerCase() === methodName.toLowerCase(),
-  );
-
-  let screenshot_url: string | null = null;
-
-  if (photo && photo.length > 0) {
     const largestPhoto = photo[photo.length - 1];
     const fileRes = await fetch(
       `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/getFile?file_id=${largestPhoto.file_id}`,
@@ -86,65 +187,63 @@ export async function POST(request: NextRequest) {
     const fileData = await fileRes.json();
     const filePath = fileData?.result?.file_path;
 
+    let screenshot_url: string | null = null;
+    let imageBuffer: Buffer | null = null;
+
     if (filePath) {
       const imageRes = await fetch(
         `https://api.telegram.org/file/bot${process.env.TELEGRAM_BOT_TOKEN}/${filePath}`,
       );
-      const imageBuffer = Buffer.from(await imageRes.arrayBuffer());
-      const fileName = `${digitsOnly}-${Date.now()}.jpg`;
+      imageBuffer = Buffer.from(await imageRes.arrayBuffer());
+      const fileName = `${session.phone}-${Date.now()}.jpg`;
 
       const { data: uploadData } = await supabaseAdmin.storage
         .from("payment-screenshots")
         .upload(fileName, imageBuffer, { contentType: "image/jpeg" });
-
       if (uploadData) screenshot_url = uploadData.path;
     }
-  }
 
-  const { data: payment } = await supabaseAdmin
-    .from("payments")
-    .insert({
-      phone_number: digitsOnly,
-      customer_name: nameRaw,
-      method: matchedAccount?.name || methodName || "Telegram",
-      payment_account_id: matchedAccount?.id || null,
-      screenshot_url,
-      status: "pending",
-    })
-    .select()
-    .single();
+    const { data: payment } = await supabaseAdmin
+      .from("payments")
+      .insert({
+        phone_number: session.phone,
+        customer_name: session.name,
+        method: session.method_name || "Telegram",
+        payment_account_id: session.method_id,
+        screenshot_url,
+        status: "pending",
+      })
+      .select()
+      .single();
 
-  if (payment) {
-    const telegramMessageId = await notifyAdminTelegram({
-      customerName: payment.customer_name,
-      phoneNumber: payment.phone_number,
-      method: payment.method,
-      screenshotBuffer: null, // already have the photo in the original message
-    });
+    if (payment) {
+      const telegramMessageId = await notifyAdminTelegram({
+        customerName: payment.customer_name,
+        phoneNumber: payment.phone_number,
+        method: payment.method,
+        screenshotBuffer: imageBuffer,
+        screenshotFilename: "screenshot.jpg",
+      });
 
-    if (telegramMessageId) {
-      await supabaseAdmin
-        .from("payments")
-        .update({ telegram_message_id: telegramMessageId })
-        .eq("id", payment.id);
+      if (telegramMessageId) {
+        await supabaseAdmin
+          .from("payments")
+          .update({ telegram_message_id: telegramMessageId })
+          .eq("id", payment.id);
+      }
     }
 
-    await sendBotReply(
+    await supabaseAdmin
+      .from("telegram_sessions")
+      .delete()
+      .eq("chat_id", chatId);
+
+    await sendBotMessage(
       chatId,
-      `✅ Got it! Your submission has been received and is pending review.\n\nWe'll notify you once it's approved.`,
+      "✅ Got it! Your submission has been received and is pending review.\n\nWe'll notify you here once it's approved.",
     );
+    return NextResponse.json({ ok: true });
   }
 
   return NextResponse.json({ ok: true });
-}
-
-async function sendBotReply(chatId: number, text: string) {
-  await fetch(
-    `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ chat_id: chatId, text }),
-    },
-  );
 }
