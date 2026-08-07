@@ -313,6 +313,26 @@ export default function PickNumberClient({
               }}
             />
 
+            {selected !== null && (
+              <div className="claim-burst mb-6 rounded-xl bg-[#E7F5EC] border border-[#CFE9D8] p-4 flex items-center justify-between gap-3 flex-wrap">
+                <div>
+                  <p className="text-[#6B8A78] text-xs">
+                    {t("yourSelectedNumber")}
+                  </p>
+                  <p className="[font-family:var(--font-fraunces)] text-2xl font-bold text-[#0F5132]">
+                    {selected}
+                  </p>
+                </div>
+                <button
+                  onClick={confirmSelection}
+                  disabled={confirming}
+                  className="press-scale rounded-lg bg-[#0F5132] text-white text-sm font-semibold px-5 py-2.5 disabled:opacity-50 hover:bg-[#0C4028] transition-colors"
+                >
+                  {confirming ? t("confirming") : t("confirmButton")}
+                </button>
+              </div>
+            )}
+
             <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
               <div className="flex items-center gap-4 text-xs text-[#6B8A78]">
                 <span className="flex items-center gap-1.5">
