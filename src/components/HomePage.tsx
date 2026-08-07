@@ -21,6 +21,7 @@ type Account = {
   account_holder: string;
   account_number: string;
   logo_url: string | null;
+  qr_code_url: string | null;
 };
 type Settings = {
   ticket_price: number;
