@@ -5,7 +5,7 @@ import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 type Entry = { number: number; maskedPhone: string; assignedAt: string };
 
-function timeAgo(dateString: string, t: (k: string) => string): string {
+function timeAgo(dateString: string, t: (k: any) => string): string {
   const seconds = Math.floor(
     (Date.now() - new Date(dateString).getTime()) / 1000,
   );
