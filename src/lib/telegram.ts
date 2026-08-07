@@ -29,7 +29,7 @@ export async function notifyAdminTelegram(params: {
       formData.append("parse_mode", "Markdown");
       formData.append(
         "photo",
-        new Blob([params.screenshotBuffer]),
+        new Blob([new Uint8Array(params.screenshotBuffer)]),
         params.screenshotFilename || "screenshot.jpg",
       );
 
