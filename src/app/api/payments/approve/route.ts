@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { updateAdminTelegramStatus } from "@/lib/telegram";
+import { notifyCustomerTelegram } from "@/lib/telegram";
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
@@ -17,7 +18,7 @@ export async function POST(request: NextRequest) {
     const { data: payment } = await supabaseAdmin
       .from("payments")
       .select(
-        "customer_name, phone_number, method, telegram_message_id, screenshot_url",
+        "customer_name, phone_number, method, telegram_message_id, screenshot_url, telegram_chat_id",
       )
       .eq("id", payment_id)
       .single();
@@ -41,6 +42,13 @@ export async function POST(request: NextRequest) {
         customerName: payment.customer_name,
         phoneNumber: payment.phone_number,
         method: payment.method,
+        status: "rejected",
+      });
+    }
+
+    if (payment?.telegram_chat_id) {
+      await notifyCustomerTelegram({
+        chatId: payment.telegram_chat_id,
         status: "rejected",
       });
     }
@@ -78,7 +86,7 @@ export async function POST(request: NextRequest) {
     const { data: payment } = await supabaseAdmin
       .from("payments")
       .select(
-        "customer_name, phone_number, method, telegram_message_id, screenshot_url",
+        "customer_name, phone_number, method, telegram_message_id, screenshot_url, telegram_chat_id",
       )
       .eq("id", payment_id)
       .single();
@@ -113,6 +121,14 @@ export async function POST(request: NextRequest) {
         method: payment.method,
         status: "approved",
         referenceNumber: reference_number.trim(),
+      });
+    }
+
+    if (payment?.telegram_chat_id) {
+      await notifyCustomerTelegram({
+        chatId: payment.telegram_chat_id,
+        status: "approved",
+        ticketCount: count,
       });
     }
 

@@ -112,3 +112,26 @@ export async function updateAdminTelegramStatus(params: {
     console.log("Telegram status update failed:", err);
   }
 }
+export async function notifyCustomerTelegram(params: {
+  chatId: number;
+  status: "approved" | "rejected";
+  ticketCount?: number;
+}) {
+  const token = process.env.TELEGRAM_BOT_TOKEN;
+  if (!token) return;
+
+  const text =
+    params.status === "approved"
+      ? `🎉 Great news! Your payment has been approved.\n\nYou can now pick your lucky number${params.ticketCount && params.ticketCount > 1 ? `s (you have ${params.ticketCount})` : ""} on the website — go to "Check Your Status" and enter your phone number to continue.`
+      : `⚠️ We couldn't verify your payment. Please double check and resubmit, or contact us for help.`;
+
+  try {
+    await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chat_id: params.chatId, text }),
+    });
+  } catch (err) {
+    console.log("notifyCustomerTelegram failed:", err);
+  }
+}

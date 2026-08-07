@@ -239,6 +239,7 @@ export async function POST(request: NextRequest) {
         payment_account_id: session.method_id,
         screenshot_url,
         status: "pending",
+        telegram_chat_id: chatId,
       })
       .select()
       .single();
