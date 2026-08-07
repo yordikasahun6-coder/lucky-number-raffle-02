@@ -177,3 +177,49 @@ export async function notifyCustomerTelegram(params: {
     }
   }
 }
+export async function notifyCustomerNumberClaimed(params: {
+  chatId: number;
+  ticketNumber: number;
+  remainingCredits: number;
+  drawDateText: string;
+}) {
+  const token = process.env.TELEGRAM_BOT_TOKEN;
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+  if (!token) return;
+
+  const text =
+    `🎟️ *Your lucky number is locked in!*\n\n` +
+    `Ticket Number: *#${params.ticketNumber}*\n` +
+    `Draw Date: *${params.drawDateText}*\n\n` +
+    `💡 Save this message — this is your proof of your number. No need to remember it yourself, just scroll back to this chat anytime.\n\n` +
+    (params.remainingCredits > 0
+      ? `You still have ${params.remainingCredits} more ticket${params.remainingCredits > 1 ? "s" : ""} to claim — go back to the site to pick the rest.\n\n`
+      : "") +
+    `Good luck! 🍀`;
+
+  try {
+    await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: params.chatId,
+        text,
+        parse_mode: "Markdown",
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: "🏠 Visit Homepage", url: siteUrl }],
+            [{ text: "🎟️ Buy Another Ticket", callback_data: "buy_another" }],
+            [
+              {
+                text: "💬 Contact Us",
+                url: `https://t.me/${process.env.TELEGRAM_SUPPORT_USERNAME || ""}`,
+              },
+            ],
+          ],
+        },
+      }),
+    });
+  } catch (err) {
+    console.log("notifyCustomerNumberClaimed failed:", err);
+  }
+}

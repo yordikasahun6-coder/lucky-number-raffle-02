@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { notifyCustomerNumberClaimed } from "@/lib/telegram";
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
@@ -62,6 +63,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    await sendClaimNotification(phone, data.number);
     return NextResponse.json({ success: true, number: data.number });
   }
 
@@ -107,5 +109,53 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  await sendClaimNotification(phone, data.number);
   return NextResponse.json({ success: true, number: data.number });
+}
+
+async function sendClaimNotification(phone: string, ticketNumber: number) {
+  try {
+    const { data: recentPayment } = await supabaseAdmin
+      .from("payments")
+      .select("telegram_chat_id")
+      .eq("phone_number", phone.trim())
+      .not("telegram_chat_id", "is", null)
+      .order("submitted_at", { ascending: false })
+      .limit(1)
+      .single();
+
+    if (!recentPayment?.telegram_chat_id) return; // not a Telegram customer, nothing to send
+
+    const { data: credits } = await supabaseAdmin
+      .from("available_credits")
+      .select("remaining")
+      .eq("phone_number", phone.trim());
+
+    const remainingCredits = (credits || []).reduce(
+      (sum, c) => sum + c.remaining,
+      0,
+    );
+
+    const { data: settingsRow } = await supabaseAdmin
+      .from("app_settings")
+      .select("closes_at")
+      .limit(1)
+      .single();
+    const drawDateText = settingsRow?.closes_at
+      ? new Date(settingsRow.closes_at).toLocaleDateString(undefined, {
+          month: "long",
+          day: "numeric",
+          year: "numeric",
+        })
+      : "To be announced";
+
+    await notifyCustomerNumberClaimed({
+      chatId: recentPayment.telegram_chat_id,
+      ticketNumber,
+      remainingCredits,
+      drawDateText,
+    });
+  } catch (err) {
+    console.log("sendClaimNotification failed:", err);
+  }
 }
