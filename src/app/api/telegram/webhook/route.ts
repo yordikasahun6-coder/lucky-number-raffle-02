@@ -15,7 +15,7 @@ async function sendBotMessage(
       ]),
     };
   }
-  await fetch(
+  const res = await fetch(
     `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`,
     {
       method: "POST",
@@ -23,6 +23,10 @@ async function sendBotMessage(
       body: JSON.stringify(body),
     },
   );
+  const data = await res.json();
+  if (!data.ok) {
+    console.log("sendBotMessage failed:", JSON.stringify(data));
+  }
 }
 
 async function answerCallback(callbackQueryId: string) {
@@ -37,17 +41,15 @@ async function answerCallback(callbackQueryId: string) {
 }
 
 async function startSession(chatId: number) {
-  await supabaseAdmin
-    .from("telegram_sessions")
-    .upsert({
-      chat_id: chatId,
-      step: "name",
-      name: null,
-      phone: null,
-      method_id: null,
-      method_name: null,
-      updated_at: new Date().toISOString(),
-    });
+  await supabaseAdmin.from("telegram_sessions").upsert({
+    chat_id: chatId,
+    step: "name",
+    name: null,
+    phone: null,
+    method_id: null,
+    method_name: null,
+    updated_at: new Date().toISOString(),
+  });
   await sendBotMessage(
     chatId,
     "👋 Let's get your ticket submitted!\n\nFirst — what's your full name?",
@@ -63,21 +65,39 @@ export async function POST(request: NextRequest) {
     const chatId = cb.message.chat.id;
     await answerCallback(cb.id);
 
-    const [methodId, methodName] = cb.data.split("|");
+    const { data: session } = await supabaseAdmin
+      .from("telegram_sessions")
+      .select("method_options")
+      .eq("chat_id", chatId)
+      .single();
+
+    const options = session?.method_options
+      ? JSON.parse(session.method_options)
+      : [];
+    const index = Number(cb.data.replace("m", ""));
+    const selected = options[index];
+
+    if (!selected) {
+      await sendBotMessage(
+        chatId,
+        "Something went wrong picking that option — please tap /start to try again.",
+      );
+      return NextResponse.json({ ok: true });
+    }
 
     await supabaseAdmin
       .from("telegram_sessions")
       .update({
         step: "photo",
-        method_id: methodId === "none" ? null : methodId,
-        method_name: methodName,
+        method_id: selected.id,
+        method_name: selected.name,
         updated_at: new Date().toISOString(),
       })
       .eq("chat_id", chatId);
 
     await sendBotMessage(
       chatId,
-      `✅ Got it — ${methodName}.\n\nLast step: send a photo of your payment screenshot.`,
+      `✅ Got it — ${selected.name}.\n\nLast step: send a photo of your payment screenshot.`,
     );
     return NextResponse.json({ ok: true });
   }
@@ -149,10 +169,17 @@ export async function POST(request: NextRequest) {
       .eq("chat_id", chatId);
 
     if (accounts && accounts.length > 0) {
-      const keyboard = accounts.map((a) => ({
+      // callback_data has a strict 64-byte limit — use a short index
+      // instead of embedding the full id+name, which can silently
+      // exceed that limit and make Telegram reject the whole message.
+      const keyboard = accounts.map((a, i) => ({
         text: a.name,
-        data: `${a.id}|${a.name}`,
+        data: `m${i}`,
       }));
+      await supabaseAdmin
+        .from("telegram_sessions")
+        .update({ method_options: JSON.stringify(accounts) })
+        .eq("chat_id", chatId);
       await sendBotMessage(
         chatId,
         "Which payment method did you use?",
