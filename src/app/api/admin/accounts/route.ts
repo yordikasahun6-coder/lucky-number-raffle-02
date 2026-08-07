@@ -18,6 +18,7 @@ export async function POST(request: NextRequest) {
   const account_holder = formData.get("account_holder") as string;
   const account_number = formData.get("account_number") as string;
   const logo = formData.get("logo") as File | null;
+  const qrCode = formData.get("qr_code") as File | null;
 
   if (!name || !account_holder || !account_number) {
     return NextResponse.json(
@@ -49,9 +50,32 @@ export async function POST(request: NextRequest) {
     logo_url = publicUrl.publicUrl;
   }
 
+  let qr_code_url: string | null = null;
+
+  if (qrCode && qrCode.size > 0) {
+    const fileExt = qrCode.name.split(".").pop();
+    const fileName = `qr-${Date.now()}-${name.replace(/[^a-z0-9]/gi, "-")}.${fileExt}`;
+
+    const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
+      .from("payment-logos")
+      .upload(fileName, qrCode, { contentType: qrCode.type });
+
+    if (uploadError) {
+      return NextResponse.json(
+        { error: `QR code upload failed: ${uploadError.message}` },
+        { status: 500 },
+      );
+    }
+
+    const { data: publicUrl } = supabaseAdmin.storage
+      .from("payment-logos")
+      .getPublicUrl(uploadData.path);
+    qr_code_url = publicUrl.publicUrl;
+  }
+
   const { data, error } = await supabaseAdmin
     .from("payment_accounts")
-    .insert({ name, account_holder, account_number, logo_url })
+    .insert({ name, account_holder, account_number, logo_url, qr_code_url })
     .select()
     .single();
 

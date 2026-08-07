@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
+import CopyButton from "./CopyButton";
 
 type Account = {
   id: string;
@@ -9,6 +10,7 @@ type Account = {
   account_holder: string;
   account_number: string;
   logo_url: string | null;
+  qr_code_url: string | null;
 };
 
 export default function PaymentAccountCard({
@@ -21,6 +23,7 @@ export default function PaymentAccountCard({
   currency: string;
 }) {
   const [open, setOpen] = useState(false);
+  const [showQr, setShowQr] = useState(false);
   const { t } = useLanguage();
 
   return (
@@ -59,20 +62,53 @@ export default function PaymentAccountCard({
               </span>
             </div>
 
-            <div className="space-y-2 mb-6 [font-family:var(--font-mono)] text-xs">
-              <div className="flex justify-between">
+            <div className="space-y-2 mb-4 [font-family:var(--font-mono)] text-xs">
+              <div className="flex justify-between items-center">
                 <span className="text-[#8A9A8F]">{t("accountHolder")}</span>
-                <span className="text-[#14231C] font-medium">
-                  {account.account_holder}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-[#14231C] font-medium">
+                    {account.account_holder}
+                  </span>
+                  <CopyButton value={account.account_holder} />
+                </div>
               </div>
-              <div className="flex justify-between">
+              <div className="flex justify-between items-center">
                 <span className="text-[#8A9A8F]">{t("accountNumber")}</span>
-                <span className="text-[#14231C] font-medium">
-                  {account.account_number}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-[#14231C] font-medium">
+                    {account.account_number}
+                  </span>
+                  <CopyButton value={account.account_number} />
+                </div>
               </div>
             </div>
+
+            {account.qr_code_url && (
+              <div className="mb-6">
+                <button
+                  type="button"
+                  onClick={() => setShowQr(!showQr)}
+                  className="press-scale w-full flex items-center justify-center gap-2 rounded-lg border border-[#E0A72E] text-[#B9861F] text-xs font-semibold px-4 py-2.5 hover:bg-[#FFF8E6] transition-colors"
+                >
+                  ⬛{" "}
+                  {showQr
+                    ? t("hideQr") || "Hide QR code"
+                    : t("showQr") || "Show QR code"}
+                </button>
+
+                <div className={`expand-panel ${showQr ? "open" : ""}`}>
+                  <div>
+                    <div className="flex justify-center pt-4">
+                      <img
+                        src={account.qr_code_url}
+                        alt="Payment QR code"
+                        className="w-40 h-40 rounded-xl border-2 border-[#EAE1C4] object-contain bg-white p-2"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className="flex items-center justify-between">
               {[t("flowSend"), t("flowScreenshot"), t("flowSubmit")].map(

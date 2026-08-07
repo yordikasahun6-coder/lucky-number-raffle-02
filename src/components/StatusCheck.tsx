@@ -14,6 +14,13 @@ export default function StatusCheck() {
   async function handleCheck(e: React.FormEvent) {
     e.preventDefault();
     if (!phone.trim()) return;
+
+    const digitsOnly = phone.replace(/[^0-9]/g, "");
+    if (!/^0[97]\d{8}$/.test(digitsOnly)) {
+      setResult(null);
+      return;
+    }
+
     setChecking(true);
     setResult(null);
 

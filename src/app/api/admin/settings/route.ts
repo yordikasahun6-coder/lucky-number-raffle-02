@@ -15,7 +15,13 @@ export async function GET() {
 
 export async function PATCH(request: NextRequest) {
   const body = await request.json();
-  const { ticket_price, currency, closes_at } = body;
+  const {
+    ticket_price,
+    currency,
+    closes_at,
+    prize_disclaimer,
+    telegram_username,
+  } = body;
 
   if (
     ticket_price === undefined ||
@@ -34,6 +40,8 @@ export async function PATCH(request: NextRequest) {
       ticket_price,
       currency: currency || "ETB",
       closes_at: closes_at || null,
+      prize_disclaimer: prize_disclaimer || null,
+      telegram_username: telegram_username || null,
     })
     .eq("id", true);
 

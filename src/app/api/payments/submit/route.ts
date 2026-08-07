@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { notifyAdminTelegram } from "@/lib/telegram";
 
 export async function POST(request: NextRequest) {
   try {
@@ -25,6 +26,20 @@ export async function POST(request: NextRequest) {
     if (!phone_number || !customer_name || !payment_account_id) {
       return NextResponse.json(
         { error: "Phone number, name, and payment method are required." },
+        { status: 400 },
+      );
+    }
+
+    const digitsOnly = phone_number.replace(/[^0-9]/g, "");
+    const normalizedForCheck = digitsOnly.startsWith("251")
+      ? "0" + digitsOnly.slice(3)
+      : digitsOnly;
+    if (!/^0[97]\d{8}$/.test(normalizedForCheck)) {
+      return NextResponse.json(
+        {
+          error:
+            "Enter a valid 10-digit Ethiopian phone number (e.g. 0912345678).",
+        },
         { status: 400 },
       );
     }
@@ -83,6 +98,26 @@ export async function POST(request: NextRequest) {
         { error: "Could not save your submission. Try again." },
         { status: 500 },
       );
+    }
+
+    let screenshotBuffer: Buffer | null = null;
+    if (screenshot && screenshot.size > 0) {
+      screenshotBuffer = Buffer.from(await screenshot.arrayBuffer());
+    }
+
+    const telegramMessageId = await notifyAdminTelegram({
+      customerName: customer_name,
+      phoneNumber: phone_number,
+      method: account.name,
+      screenshotBuffer,
+      screenshotFilename: screenshot?.name,
+    });
+
+    if (telegramMessageId) {
+      await supabaseAdmin
+        .from("payments")
+        .update({ telegram_message_id: telegramMessageId })
+        .eq("id", data.id);
     }
 
     return NextResponse.json({ success: true, payment: data });

@@ -11,6 +11,7 @@ export default function AdminLayout({
     { href: "/admin/records", label: "Claimed tickets" },
     { href: "/admin/screenshots", label: "Screenshots" },
     { href: "/admin/accounts", label: "Payment methods" },
+    { href: "/admin/prizes", label: "Prizes" },
     { href: "/admin/assets", label: "Site images" },
     { href: "/admin/settings", label: "Ticket price" },
     { href: "/admin/reset", label: "Reset" },

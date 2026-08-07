@@ -5,14 +5,19 @@ import { useSearchParams } from "next/navigation";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import LanguageToggle from "./LanguageToggle";
 import ConfettiBurst from "./ConfettiBurst";
+import TicketsCompleteScreen from "./TicketsCompleteScreen";
+import RandomPickPanel from "./RandomPickPanel";
 
 const PER_PAGE = 100;
-const TOTAL = 1000;
 
 export default function PickNumberClient({
   assets,
+  closesAt,
+  maxNumber,
 }: {
   assets: Record<string, string | null>;
+  closesAt: string | null;
+  maxNumber: number;
 }) {
   const searchParams = useSearchParams();
   const { t } = useLanguage();
@@ -23,6 +28,7 @@ export default function PickNumberClient({
   const [approved, setApproved] = useState(false);
   const [availableCredits, setAvailableCredits] = useState(0);
   const [myNumbers, setMyNumbers] = useState<number[]>([]);
+  const [customerName, setCustomerName] = useState("");
   const [takenNumbers, setTakenNumbers] = useState<Set<number>>(new Set());
 
   const [selected, setSelected] = useState<number | null>(null);
@@ -63,6 +69,7 @@ export default function PickNumberClient({
     setApproved(result.approved);
     setAvailableCredits(result.availableCredits || 0);
     setMyNumbers(result.myNumbers || []);
+    setCustomerName(result.customerName || ""); // <-- ADD THIS LINE
     setTakenNumbers(new Set(result.takenNumbers || []));
     setStatusChecked(true);
     setChecking(false);
@@ -76,6 +83,7 @@ export default function PickNumberClient({
     setApproved(result.approved);
     setAvailableCredits(result.availableCredits || 0);
     setMyNumbers(result.myNumbers || []);
+    setCustomerName(result.customerName || ""); // <-- ADD THIS LINE
     setTakenNumbers(new Set(result.takenNumbers || []));
   }
 
@@ -125,14 +133,30 @@ export default function PickNumberClient({
 
   const searchedNumber = search.trim() ? parseInt(search.trim(), 10) : null;
   const pageNumbers = useMemo(() => {
-    if (searchedNumber && searchedNumber >= 1 && searchedNumber <= TOTAL) {
+    if (searchedNumber && searchedNumber >= 1 && searchedNumber <= maxNumber) {
       return [searchedNumber];
     }
     const start = (page - 1) * PER_PAGE + 1;
     return Array.from({ length: PER_PAGE }, (_, i) => start + i);
   }, [page, searchedNumber]);
 
-  const totalPages = Math.ceil(TOTAL / PER_PAGE);
+  const totalPages = Math.ceil(maxNumber / PER_PAGE);
+
+  // ===== Finished all their tickets — show the celebration screen =====
+  // This check must come before the "!approved" check below, because
+  // once every ticket is claimed, `approved` naturally becomes false
+  // (no credits left) — but that does NOT mean "still under review",
+  // it means "done". So we check this condition first.
+  if (statusChecked && myNumbers.length > 0 && availableCredits === 0) {
+    return (
+      <TicketsCompleteScreen
+        numbers={myNumbers}
+        drawDate={closesAt}
+        customerName={customerName}
+        phone={phone}
+      />
+    );
+  }
 
   if (!statusChecked) {
     return (
@@ -173,27 +197,11 @@ export default function PickNumberClient({
           <div className="flex justify-center mb-4">
             <LanguageToggle />
           </div>
-          <div className="text-4xl mb-4 float-hero inline-block">
-            {myNumbers.length > 0 ? "🎟️" : "⏳"}
-          </div>
+          <div className="text-4xl mb-4 float-hero inline-block">⏳</div>
           <h1 className="[font-family:var(--font-fraunces)] text-2xl font-bold text-[#14231C] mb-2">
-            {myNumbers.length > 0 ? t("noTicketTitle") : t("stillReviewTitle")}
+            {t("stillReviewTitle")}
           </h1>
-          <p className="text-[#8A9A8F] text-sm">
-            {myNumbers.length > 0 ? t("noTicketDesc") : t("stillReviewDesc")}
-          </p>
-          {myNumbers.length > 0 && (
-            <div className="mt-4 flex flex-wrap gap-2 justify-center">
-              {myNumbers.map((n) => (
-                <span
-                  key={n}
-                  className="rounded-full bg-[#E7F5EC] text-[#0F5132] [font-family:var(--font-mono)] px-3 py-1 text-sm font-medium"
-                >
-                  #{n}
-                </span>
-              ))}
-            </div>
-          )}
+          <p className="text-[#8A9A8F] text-sm">{t("stillReviewDesc")}</p>
           <a
             href="/"
             className="inline-block mt-6 text-[#0F5132] text-sm underline hover:text-[#E0A72E] transition-colors"
@@ -247,7 +255,12 @@ export default function PickNumberClient({
             <h1 className="[font-family:var(--font-fraunces)] text-3xl font-bold text-[#14231C] mb-2">
               {t("pickLuckyTitle")}
             </h1>
-            <p className="text-[#8A9A8F] text-sm">{t("pickLuckyDesc")}</p>
+            <p className="text-[#8A9A8F] text-sm">
+              {(
+                t("pickLuckyDesc") ||
+                "Choose any number between 1 and {max}, or let us pick one for you."
+              ).replace("{max}", maxNumber.toLocaleString())}
+            </p>
           </div>
           {assets.hero_image && (
             <img
@@ -289,32 +302,16 @@ export default function PickNumberClient({
           </p>
         )}
 
-        {availableCredits > 0 ? (
+        {availableCredits > 0 && (
           <>
-            <div className="hover-lift rounded-xl bg-[#E7F5EC] border border-[#CFE9D8] p-4 flex items-center justify-between gap-3 mb-6">
-              <div className="flex items-center gap-3">
-                <div
-                  className={`w-9 h-9 rounded-full bg-white flex items-center justify-center text-[#0F5132] ${rolling ? "animate-spin" : ""}`}
-                >
-                  🎲
-                </div>
-                <div>
-                  <p className="font-bold text-[#14231C] text-sm">
-                    {t("pickRandomTitle")}
-                  </p>
-                  <p className="text-[#6B8A78] text-xs">
-                    {t("pickRandomDesc")}
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={pickRandom}
-                disabled={confirming}
-                className="press-scale rounded-lg bg-[#0F5132] text-white text-sm font-semibold px-4 py-2.5 disabled:opacity-50 whitespace-nowrap hover:bg-[#0C4028] transition-colors"
-              >
-                {confirming ? "..." : `✦ ${t("pickRandomButton")}`}
-              </button>
-            </div>
+            <RandomPickPanel
+              disabled={confirming}
+              maxNumber={maxNumber}
+              onResult={(n) => {
+                setSelected(n);
+                setError("");
+              }}
+            />
 
             <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
               <div className="flex items-center gap-4 text-xs text-[#6B8A78]">
@@ -331,46 +328,110 @@ export default function PickNumberClient({
                   {t("legendTaken")}
                 </span>
               </div>
-              <input
-                type="text"
-                value={search}
-                onChange={(e) =>
-                  setSearch(e.target.value.replace(/[^0-9]/g, ""))
-                }
-                placeholder={t("searchPlaceholder")}
-                className="rounded-lg border border-[#D9D0B0] px-3 py-1.5 text-sm text-[#14231C] w-36 focus:outline-none focus:ring-2 focus:ring-[#0F5132] transition-shadow"
-              />
+              <div className="relative">
+                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#B4C0B8] text-xs pointer-events-none">
+                  🔍
+                </span>
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) =>
+                    setSearch(e.target.value.replace(/[^0-9]/g, ""))
+                  }
+                  placeholder={t("searchPlaceholder")}
+                  className={`rounded-full border-2 pl-8 pr-8 py-2 text-sm text-[#14231C] w-40 focus:outline-none transition-all duration-300 ${
+                    search
+                      ? "border-[#0F5132] shadow-[0_0_0_4px_rgba(15,81,50,0.08)]"
+                      : "border-[#D9D0B0] focus:border-[#0F5132] focus:shadow-[0_0_0_4px_rgba(15,81,50,0.08)]"
+                  }`}
+                />
+                {search && (
+                  <button
+                    onClick={() => setSearch("")}
+                    className="press-scale absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-[#EAE1C4] text-[#8A9A8F] text-[10px] flex items-center justify-center hover:bg-[#D9D0B0] transition-colors"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
             </div>
 
             <div className="rounded-xl border border-[#EAE1C4] bg-white p-4">
-              <div className="grid grid-cols-5 sm:grid-cols-10 gap-1.5">
-                {pageNumbers.map((n, i) => {
-                  const isMine = myNumbers.includes(n);
-                  const isTaken = takenNumbers.has(n);
-                  const isSelected = selected === n;
+              {searchedNumber &&
+              searchedNumber >= 1 &&
+              searchedNumber <= maxNumber ? (
+                <div className="flex flex-col items-center py-4">
+                  <p className="[font-family:var(--font-mono)] text-[10px] tracking-widest text-[#B4A968] uppercase mb-3">
+                    {t("searchResultLabel") || "Search result"}
+                  </p>
+                  {pageNumbers.map((n) => {
+                    const isMine = myNumbers.includes(n);
+                    const isTaken = takenNumbers.has(n);
+                    const isSelected = selected === n;
 
-                  let style =
-                    "border-[#CFE9D8] text-[#0F5132] hover:bg-[#F0FBF4] hover:scale-105";
-                  if (isTaken || isMine)
-                    style =
-                      "border-[#F6D3CE] bg-[#FDF2F0] text-[#E15B4F] cursor-not-allowed";
-                  if (isSelected)
-                    style =
-                      "border-[#E0A72E] bg-[#FFF8E6] text-[#B9861F] scale-110";
+                    let style =
+                      "border-[#CFE9D8] text-[#0F5132] hover:bg-[#F0FBF4]";
+                    if (isTaken || isMine)
+                      style =
+                        "border-[#F6D3CE] bg-[#FDF2F0] text-[#E15B4F] cursor-not-allowed";
+                    if (isSelected)
+                      style = "border-[#E0A72E] bg-[#FFF8E6] text-[#B9861F]";
 
-                  return (
-                    <button
-                      key={`${page}-${n}`}
-                      onClick={() => selectNumber(n)}
-                      disabled={isTaken || isMine}
-                      className={`number-pop press-scale aspect-square rounded-lg border [font-family:var(--font-mono)] text-xs flex items-center justify-center transition-all duration-200 ${style}`}
-                      style={{ animationDelay: `${(i % 20) * 0.012}s` }}
-                    >
-                      {n}
-                    </button>
-                  );
-                })}
-              </div>
+                    return (
+                      <button
+                        key={n}
+                        onClick={() => selectNumber(n)}
+                        disabled={isTaken || isMine}
+                        className={`search-spotlight press-scale w-28 h-28 rounded-2xl border-2 [font-family:var(--font-mono)] text-3xl font-bold flex items-center justify-center transition-colors ${style}`}
+                      >
+                        {n}
+                      </button>
+                    );
+                  })}
+                  {takenNumbers.has(searchedNumber) && (
+                    <p className="text-[#E15B4F] text-xs mt-3">
+                      {t("numberTakenNotice") || "This number is already taken"}
+                    </p>
+                  )}
+                </div>
+              ) : search ? (
+                <div className="search-empty-shake flex flex-col items-center py-8 text-center">
+                  <span className="text-3xl mb-2">🔎</span>
+                  <p className="text-[#8A9A8F] text-sm">
+                    {t("searchOutOfRange") ||
+                      "Enter a number between 1 and 1000"}
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-5 sm:grid-cols-10 gap-1.5">
+                  {pageNumbers.map((n, i) => {
+                    const isMine = myNumbers.includes(n);
+                    const isTaken = takenNumbers.has(n);
+                    const isSelected = selected === n;
+
+                    let style =
+                      "border-[#CFE9D8] text-[#0F5132] hover:bg-[#F0FBF4] hover:scale-105";
+                    if (isTaken || isMine)
+                      style =
+                        "border-[#F6D3CE] bg-[#FDF2F0] text-[#E15B4F] cursor-not-allowed";
+                    if (isSelected)
+                      style =
+                        "border-[#E0A72E] bg-[#FFF8E6] text-[#B9861F] scale-110";
+
+                    return (
+                      <button
+                        key={`${page}-${n}`}
+                        onClick={() => selectNumber(n)}
+                        disabled={isTaken || isMine}
+                        className={`number-pop press-scale aspect-square rounded-lg border [font-family:var(--font-mono)] text-xs flex items-center justify-center transition-all duration-200 ${style}`}
+                        style={{ animationDelay: `${(i % 20) * 0.012}s` }}
+                      >
+                        {n}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
 
               {!searchedNumber && (
                 <div className="flex items-center justify-center gap-1.5 mt-4 text-xs">
@@ -436,49 +497,7 @@ export default function PickNumberClient({
               {t("confirmNote")}
             </div>
           </>
-        ) : (
-          <div className="rounded-xl bg-white border border-[#EAE1C4] p-6 text-center">
-            <p className="text-[#14231C] text-sm font-medium mb-1">
-              {t("usedAllTitle")}
-            </p>
-            <p className="text-[#8A9A8F] text-xs">{t("usedAllDesc")}</p>
-          </div>
         )}
-
-        {/* ===== POWERED BY CODEXA FOOTER ===== */}
-        <footer className="mt-10 pt-6 border-t border-[#EAE1C4]">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
-            <p className="text-[#8A9A8F] text-xs">
-              &copy; {new Date().getFullYear()} Lucky Ticket. All rights
-              reserved.
-            </p>
-            <p className="text-[#8A9A8F] text-xs flex items-center gap-1.5">
-              Powered by{" "}
-              <a
-                href="https://kodexa-portfolio.vercel.app/"
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={(e) => {
-                  e.preventDefault();
-                  window.open(
-                    "https://kodexa-portfolio.vercel.app/",
-                    "_blank",
-                    "noopener,noreferrer",
-                  );
-                }}
-                className="text-[#E0A72E] font-bold hover:text-[#C8951A] transition-colors duration-300 hover:underline underline-offset-2 cursor-pointer"
-              >
-                kodexa
-              </a>
-              <span className="text-[#B4C0B8]">|</span>
-              <span className="text-[#B4C0B8] text-[10px]">v2.0</span>
-            </p>
-          </div>
-          <p className="text-[#B4C0B8] text-[10px] text-center mt-2 tracking-wider">
-            ✦ Crafted with precision by kodexa Technologies ✦
-          </p>
-        </footer>
-        {/* ===== END FOOTER ===== */}
       </div>
     </main>
   );

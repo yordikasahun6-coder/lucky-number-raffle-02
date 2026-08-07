@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { updateAdminTelegramStatus } from "@/lib/telegram";
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
@@ -13,6 +14,14 @@ export async function POST(request: NextRequest) {
   }
 
   if (action === "reject") {
+    const { data: payment } = await supabaseAdmin
+      .from("payments")
+      .select(
+        "customer_name, phone_number, method, telegram_message_id, screenshot_url",
+      )
+      .eq("id", payment_id)
+      .single();
+
     const { error } = await supabaseAdmin
       .from("payments")
       .update({
@@ -24,6 +33,18 @@ export async function POST(request: NextRequest) {
 
     if (error)
       return NextResponse.json({ error: "Reject failed." }, { status: 500 });
+
+    if (payment?.telegram_message_id) {
+      await updateAdminTelegramStatus({
+        messageId: payment.telegram_message_id,
+        hasPhoto: !!payment.screenshot_url,
+        customerName: payment.customer_name,
+        phoneNumber: payment.phone_number,
+        method: payment.method,
+        status: "rejected",
+      });
+    }
+
     return NextResponse.json({ success: true });
   }
 
@@ -54,6 +75,14 @@ export async function POST(request: NextRequest) {
 
     const count = Number(ticket_count) > 0 ? Number(ticket_count) : 1;
 
+    const { data: payment } = await supabaseAdmin
+      .from("payments")
+      .select(
+        "customer_name, phone_number, method, telegram_message_id, screenshot_url",
+      )
+      .eq("id", payment_id)
+      .single();
+
     const { error } = await supabaseAdmin
       .from("payments")
       .update({
@@ -73,6 +102,18 @@ export async function POST(request: NextRequest) {
         { error: "This reference number was just used by someone else." },
         { status: 409 },
       );
+    }
+
+    if (payment?.telegram_message_id) {
+      await updateAdminTelegramStatus({
+        messageId: payment.telegram_message_id,
+        hasPhoto: !!payment.screenshot_url,
+        customerName: payment.customer_name,
+        phoneNumber: payment.phone_number,
+        method: payment.method,
+        status: "approved",
+        referenceNumber: reference_number.trim(),
+      });
     }
 
     return NextResponse.json({ success: true });

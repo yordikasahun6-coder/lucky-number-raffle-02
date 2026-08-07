@@ -21,14 +21,23 @@ export default function ScreenshotUpload({
       setPreview(null);
       return;
     }
-    if (!f.type.startsWith("image/")) return;
+    const isImage = f.type.startsWith("image/");
+    const isPdf = f.type === "application/pdf";
+    if (!isImage && !isPdf) return;
     if (f.size > 5 * 1024 * 1024) return; // 5MB cap
 
     onChange(f);
-    const reader = new FileReader();
-    reader.onload = () => setPreview(reader.result as string);
-    reader.readAsDataURL(f);
+
+    if (isImage) {
+      const reader = new FileReader();
+      reader.onload = () => setPreview(reader.result as string);
+      reader.readAsDataURL(f);
+    } else {
+      setPreview(null); // PDF — no thumbnail, just show the file card
+    }
   }
+
+  const isPdfFile = file?.type === "application/pdf";
 
   return (
     <div>
@@ -52,35 +61,42 @@ export default function ScreenshotUpload({
             setDragOver(false);
             handleFile(e.dataTransfer.files?.[0] || null);
           }}
-          className={`rounded-xl border-2 border-dashed px-4 py-8 text-center cursor-pointer transition ${
+          className={`rounded-2xl border-2 border-dashed px-4 py-9 text-center cursor-pointer transition ${
             dragOver
-              ? "border-[#16A34A] bg-[#16A34A]/5"
+              ? "border-[#16A34A] bg-[#16A34A]/5 scale-[1.01]"
               : "border-[#D1D5DB] hover:border-[#16A34A] hover:bg-[#F9FAFB]"
           }`}
         >
-          <div className="w-11 h-11 mx-auto rounded-full bg-[#E7F5EC] flex items-center justify-center mb-2 text-[#16A34A] text-lg">
-            ⬆
-          </div>
-          <p className="text-[#374151] text-sm font-medium">
-            Tap to upload or drag a screenshot here
+          <div className="text-4xl mb-3">📷</div>
+          <p className="text-[#111827] text-sm font-semibold">
+            {t("uploadTitle") || "Upload Payment Screenshot"}
           </p>
-          <p className="text-[#9CA3AF] text-xs mt-1">PNG or JPG, up to 5MB</p>
+          <p className="text-[#9CA3AF] text-xs mt-1">
+            {t("uploadFormats") || "PNG, JPG, or PDF"}
+          </p>
+          <p className="text-[#9CA3AF] text-xs">
+            {t("uploadMaxSize") || "Max 5MB"}
+          </p>
           <input
             ref={inputRef}
             type="file"
-            accept="image/*"
+            accept="image/*,application/pdf"
             className="hidden"
             onChange={(e) => handleFile(e.target.files?.[0] || null)}
           />
         </div>
       ) : (
         <div className="rounded-xl border border-[#CFE9D8] bg-[#F0FDF4] p-3 flex items-center gap-3">
-          {preview && (
+          {preview ? (
             <img
               src={preview}
               alt="Screenshot preview"
               className="w-14 h-14 rounded-lg object-cover shrink-0 border border-[#CFE9D8]"
             />
+          ) : (
+            <div className="w-14 h-14 rounded-lg bg-white border border-[#CFE9D8] flex items-center justify-center text-2xl shrink-0">
+              {isPdfFile ? "📄" : "🖼️"}
+            </div>
           )}
           <div className="flex-1 min-w-0">
             <p className="text-[#166534] text-sm font-medium truncate">

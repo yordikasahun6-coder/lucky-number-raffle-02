@@ -6,7 +6,15 @@ import ScreenshotUpload from "./ScreenshotUpload";
 
 type Account = { id: string; name: string; logo_url: string | null };
 
-export default function BuyTicketForm({ accounts }: { accounts: Account[] }) {
+export default function BuyTicketForm({
+  accounts,
+  telegramUsername,
+  botUsername,
+}: {
+  accounts: Account[];
+  telegramUsername: string | null;
+  botUsername: string | null;
+}) {
   const [phone, setPhone] = useState("");
   const [name, setName] = useState("");
   const [accountId, setAccountId] = useState("");
@@ -16,12 +24,33 @@ export default function BuyTicketForm({ accounts }: { accounts: Account[] }) {
   const [error, setError] = useState("");
   const { t } = useLanguage();
 
+  const selectedAccount = accounts.find((a) => a.id === accountId);
+
+  function buildTelegramLink(): string {
+    const methodText = selectedAccount ? selectedAccount.name : "_____";
+    const nameText = name.trim() || "_____";
+    const phoneText = phone.trim() || "_____";
+
+    const template = `Name: ${nameText}\nPhone: ${phoneText}\nPayment method: ${methodText}\n\n[Attach your payment screenshot below]`;
+
+    return `https://t.me/${botUsername}?text=${encodeURIComponent(template)}`;
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
 
     if (!phone || !name || !accountId) {
       setError("Please fill in your phone number, name, and payment method.");
+      return;
+    }
+
+    const digitsOnly = phone.replace(/[^0-9]/g, "");
+    if (!/^0[97]\d{8}$/.test(digitsOnly)) {
+      setError(
+        t("invalidPhoneError") ||
+          "Enter a valid 10-digit phone number (e.g. 0912345678).",
+      );
       return;
     }
 
@@ -126,6 +155,38 @@ export default function BuyTicketForm({ accounts }: { accounts: Account[] }) {
       </div>
 
       <ScreenshotUpload file={screenshot} onChange={setScreenshot} />
+
+      {botUsername && (
+        <div>
+          <div className="flex items-center gap-3 my-1">
+            <div className="flex-1 h-px bg-[#E5E7EB]" />
+            <span className="text-[10px] text-[#9CA3AF] font-semibold uppercase tracking-wide">
+              {t("orLabel") || "Or"}
+            </span>
+            <div className="flex-1 h-px bg-[#E5E7EB]" />
+          </div>
+
+          <div className="rounded-xl border border-[#BFE3F5] bg-[#F0F9FF] px-4 py-3">
+            <p className="text-[#0C4A6E] text-xs font-semibold mb-1">
+              {t("telegramAltTitle") ||
+                "Can't upload here? Send it on Telegram"}
+            </p>
+            <p className="text-[#0C4A6E]/70 text-[11px] mb-3">
+              {t("telegramAltDesc") ||
+                "Fill in your details above first — we'll pre-fill the message for you."}
+            </p>
+
+            <a
+              href={buildTelegramLink()}
+              target="_blank"
+              rel="noreferrer"
+              className="press-scale inline-flex items-center gap-2 rounded-lg bg-[#229ED9] text-white text-xs font-semibold px-4 py-2.5 hover:bg-[#1B8BC0] transition-colors"
+            >
+              ✈️ {t("telegramButton") || "Open Telegram with details filled in"}
+            </a>
+          </div>
+        </div>
+      )}
 
       {error && <p className="text-sm text-red-600">{error}</p>}
 

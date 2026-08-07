@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
 
   const { data: payments } = await supabaseAdmin
     .from("payments")
-    .select("status")
+    .select("status, customer_name")
     .eq("phone_number", cleanPhone)
     .order("submitted_at", { ascending: false });
 
@@ -55,5 +55,6 @@ export async function GET(request: NextRequest) {
     availableCredits,
     myNumbers: (myNumbers || []).map((n) => n.number),
     takenNumbers: (takenRows || []).map((n) => n.number),
+    customerName: payments?.[0]?.customer_name || null,
   });
 }

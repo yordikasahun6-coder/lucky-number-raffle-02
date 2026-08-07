@@ -33,7 +33,7 @@ export default function Countdown({ closesAt }: { closesAt: string }) {
 
   if (closed) {
     return (
-      <div className="rounded-xl bg-[#FDF2F0] border border-[#F6D3CE] px-4 py-2.5 text-center">
+      <div className="rounded-2xl bg-[#FDF2F0] border border-[#F6D3CE] px-5 py-3 text-center">
         <p className="text-[#E15B4F] text-sm font-semibold">
           Ticket sales have closed
         </p>
@@ -43,14 +43,41 @@ export default function Countdown({ closesAt }: { closesAt: string }) {
 
   if (!timeLeft) return null;
 
+  const units = [
+    { value: timeLeft.d, label: "D" },
+    { value: timeLeft.h, label: "H" },
+    { value: timeLeft.m, label: "M" },
+    { value: timeLeft.s, label: "S" },
+  ];
+
   return (
-    <div className="rounded-xl bg-[#FFF8E6] border border-[#F0D68A] px-4 py-2.5 flex items-center justify-center gap-3">
-      <span className="text-[#B9861F] text-xs font-medium">Closes in</span>
-      <div className="flex items-center gap-1.5 [font-family:var(--font-mono)] text-sm font-bold text-[#0F5132]">
-        {timeLeft.d > 0 && <span>{timeLeft.d}d</span>}
-        <span>{String(timeLeft.h).padStart(2, "0")}h</span>
-        <span>{String(timeLeft.m).padStart(2, "0")}m</span>
-        <span>{String(timeLeft.s).padStart(2, "0")}s</span>
+    <div className="rounded-2xl bg-gradient-to-r from-[#0F5132] to-[#0C4028] px-4 sm:px-5 py-3 flex items-center gap-3 shadow-md">
+      <div className="flex items-center gap-1.5 shrink-0">
+        <span className="urgent-dot w-2 h-2 rounded-full bg-[#E0A72E]" />
+        <span className="text-white/70 text-[10px] uppercase tracking-wide font-semibold hidden sm:inline">
+          Closes in
+        </span>
+        <span className="text-white/70 text-[10px] uppercase tracking-wide font-semibold sm:hidden">
+          ⏱
+        </span>
+      </div>
+
+      <div className="flex items-center gap-1.5 [font-family:var(--font-mono)]">
+        {units.map((u, i) => (
+          <div key={i} className="flex items-center gap-1.5">
+            <div className="flex flex-col items-center leading-none">
+              <span className="text-white font-bold text-base sm:text-lg">
+                {String(u.value).padStart(2, "0")}
+              </span>
+              <span className="text-[#E0A72E] text-[8px] font-bold">
+                {u.label}
+              </span>
+            </div>
+            {i < units.length - 1 && (
+              <span className="text-white/30 text-sm -mt-1.5">:</span>
+            )}
+          </div>
+        ))}
       </div>
     </div>
   );

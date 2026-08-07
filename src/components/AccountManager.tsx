@@ -8,6 +8,7 @@ type Account = {
   account_holder: string;
   account_number: string;
   logo_url: string | null;
+  qr_code_url: string | null;
   active: boolean;
 };
 
@@ -22,6 +23,7 @@ export default function AccountManager({
   const [holder, setHolder] = useState("");
   const [number, setNumber] = useState("");
   const [logo, setLogo] = useState<File | null>(null);
+  const [qrCode, setQrCode] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -39,6 +41,7 @@ export default function AccountManager({
     formData.append("account_holder", holder);
     formData.append("account_number", number);
     if (logo) formData.append("logo", logo);
+    if (qrCode) formData.append("qr_code", qrCode);
 
     const res = await fetch("/api/admin/accounts", {
       method: "POST",
@@ -57,6 +60,7 @@ export default function AccountManager({
     setHolder("");
     setNumber("");
     setLogo(null);
+    setQrCode(null);
     setShowForm(false);
     setSaving(false);
   }
@@ -100,6 +104,11 @@ export default function AccountManager({
               <p className="[font-family:var(--font-mono)] text-xs text-[#7C879C]">
                 {a.account_holder} · {a.account_number}
               </p>
+              {a.qr_code_url && (
+                <p className="text-[10px] text-[#4FBF8B] mt-0.5">
+                  ✓ QR code attached
+                </p>
+              )}
             </div>
             <button
               onClick={() => toggleActive(a.id, a.active)}
@@ -153,12 +162,32 @@ export default function AccountManager({
             placeholder="Account number"
             className="w-full rounded bg-[#0B0F17] border border-[#232D42] px-3 py-2 text-[#EDEFF3] text-sm placeholder-[#4A5468]"
           />
-          <input
-            type="file"
-            accept="image/*"
-            onChange={(e) => setLogo(e.target.files?.[0] || null)}
-            className="w-full text-sm text-[#7C879C]"
-          />
+          <div>
+            <label className="block text-xs text-[#7C879C] mb-1.5">Logo</label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => setLogo(e.target.files?.[0] || null)}
+              className="w-full text-sm text-[#7C879C] file:mr-3 file:rounded-lg file:border-0 file:bg-[#D4A24C] file:text-[#0B0F17] file:px-4 file:py-2 file:text-sm file:font-medium file:cursor-pointer hover:file:bg-[#E0AF5C] file:transition-colors"
+            />
+            {logo && (
+              <p className="text-[10px] text-[#4FBF8B] mt-1">✓ {logo.name}</p>
+            )}
+          </div>
+          <div>
+            <label className="block text-xs text-[#7C879C] mb-1.5">
+              QR code (optional)
+            </label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => setQrCode(e.target.files?.[0] || null)}
+              className="w-full text-sm text-[#7C879C] file:mr-3 file:rounded-lg file:border-0 file:bg-[#D4A24C] file:text-[#0B0F17] file:px-4 file:py-2 file:text-sm file:font-medium file:cursor-pointer hover:file:bg-[#E0AF5C] file:transition-colors"
+            />
+            {qrCode && (
+              <p className="text-[10px] text-[#4FBF8B] mt-1">✓ {qrCode.name}</p>
+            )}
+          </div>
           {error && <p className="text-[#E15B4F] text-xs">{error}</p>}
           <div className="flex gap-2">
             <button

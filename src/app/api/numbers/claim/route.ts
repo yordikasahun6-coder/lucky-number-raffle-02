@@ -7,15 +7,18 @@ export async function POST(request: NextRequest) {
 
   const { data: settings } = await supabaseAdmin
     .from("app_settings")
-    .select("closes_at")
+    .select("closes_at, max_number")
     .limit(1)
     .single();
+
   if (settings?.closes_at && new Date(settings.closes_at) < new Date()) {
     return NextResponse.json(
       { error: "The draw has closed — numbers can no longer be claimed." },
       { status: 403 },
     );
   }
+
+  const maxNumber = settings?.max_number || 1000;
 
   if (!phone) {
     return NextResponse.json(
@@ -62,9 +65,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, number: data.number });
   }
 
-  if (!number || number < 1 || number > 1000) {
+  if (!number || number < 1 || number > maxNumber) {
     return NextResponse.json(
-      { error: "Pick a number between 1 and 1000." },
+      { error: `Pick a number between 1 and ${maxNumber}.` },
       { status: 400 },
     );
   }
