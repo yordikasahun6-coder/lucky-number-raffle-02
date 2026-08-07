@@ -86,6 +86,9 @@ export const translations = {
     backHome: "Back to home",
     ticketsAvailable: "ticket",
     pickLuckyTitle: "Pick Your Lucky Number",
+    checkStatusHint:
+      'Use "Check Your Status" below anytime to see your approval',
+    submitAnotherButton: "Submit Another Ticket",
     pickLuckyDesc:
       "Choose any number between 1 and {max}, or let us pick one for you.",
     alreadyYours: "Already yours",
@@ -288,6 +291,8 @@ export const translations = {
     pickTitle: "ቁጥርዎን ይምረጡ",
     recentLabel: "የቀጥታ እንቅስቃሴ",
     recentTitle: "የቅርብ ጊዜ ግዢዎች",
+    checkStatusHint: 'ማጽደቅዎን ለማየት ከታች ያለውን "ሁኔታዎን ያረጋግጡ" በማንኛውም ጊዜ ይጠቀሙ',
+    submitAnotherButton: "ሌላ ትኬት አስገባ",
     boughtLabel: "ገዝቷል",
     pickPhonePlaceholder: "ስልክ ቁጥርዎን ያስገቡ",
     checkMyStatus: "ሁኔታዬን ያረጋግጡ",
@@ -550,7 +555,6 @@ export const translations = {
     minutesAgo: "daqiiqaa darbe",
     hourAgo: "sa'aatii darbe",
     footerTelegramTitle: "Gargaarsa Telegram",
-
     footerTelegramDesc: "Yeroo hunduu kallattiitti nu qunnami",
     footerSmsTitle: "Beeksisa SMS",
     footerSmsDesc: "Yeroo mirkanaa'u yeroo sana beekta",
@@ -572,6 +576,9 @@ export const translations = {
     uploadMaxSize: "Hamma 5MB",
     confirming: "Mirkaneessaa Jira...",
     faqLabel: "Gaaffiiwwan",
+    checkStatusHint:
+      '"Haala Keessan Mirkaneessaa" gadii yeroo barbaaddanitti fayyadamii mirkaneessa keessan ilaaluuf',
+    submitAnotherButton: "Tikkeettii Biroo Ergaa",
     faqTitle: "Gaaffiiwwan yeroo baay'ee gaafataman",
     faqQ1: "Tikeetii akkamittan bitadha?",
     faqA1:

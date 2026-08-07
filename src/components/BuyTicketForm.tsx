@@ -36,6 +36,15 @@ export default function BuyTicketForm({
     return `https://t.me/${botUsername}?text=${encodeURIComponent(template)}`;
   }
 
+  function resetForNewSubmission() {
+    setPhone("");
+    setName("");
+    setAccountId("");
+    setScreenshot(null);
+    setError("");
+    setSubmitted(false);
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
@@ -75,6 +84,7 @@ export default function BuyTicketForm({
         return;
       }
       setSubmitted(true);
+      setSubmitting(false);
     } catch {
       setError("Network error. Check your connection and try again.");
       setSubmitting(false);
@@ -83,12 +93,62 @@ export default function BuyTicketForm({
 
   if (submitted) {
     return (
-      <div className="text-center py-8">
-        <div className="text-4xl mb-3">✓</div>
-        <p className="text-[#111827] font-semibold mb-1">
-          {t("submittedTitle")}
-        </p>
-        <p className="text-[#6B7280] text-sm">{t("submittedDesc")}</p>
+      <div className="text-center py-6 relative overflow-hidden">
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          {["🪙", "🍀", "✨", "🪙", "✨"].map((emoji, i) => (
+            <span
+              key={i}
+              className="ambient-item absolute text-xl"
+              style={{
+                top: `${10 + i * 15}%`,
+                left: `${10 + i * 18}%`,
+                animationDuration: `${5 + i}s`,
+                animationDelay: `${i * 0.3}s`,
+              }}
+            >
+              {emoji}
+            </span>
+          ))}
+        </div>
+
+        <div className="relative z-10">
+          <div className="check-circle w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-[#16A34A] to-[#15803D] flex items-center justify-center shadow-lg shadow-[#16A34A]/30">
+            <svg width="38" height="38" viewBox="0 0 40 40" fill="none">
+              <path
+                className="check-mark"
+                d="M10 21 L17 28 L30 13"
+                stroke="white"
+                strokeWidth="4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </div>
+
+          <div className="content-reveal" style={{ animationDelay: "0.5s" }}>
+            <p className="[font-family:var(--font-fraunces)] text-2xl font-bold text-[#111827] mb-1">
+              {t("submittedTitle")}
+            </p>
+            <p className="text-[#6B7280] text-sm max-w-xs mx-auto mb-6">
+              {t("submittedDesc")}
+            </p>
+
+            <div className="inline-flex items-center gap-2 rounded-full bg-[#F0FDF4] border border-[#BBF7D0] text-[#166534] text-xs font-semibold px-4 py-2 mb-6">
+              📱{" "}
+              {t("checkStatusHint") ||
+                'Use "Check Your Status" below anytime to see your approval'}
+            </div>
+
+            <div>
+              <button
+                onClick={resetForNewSubmission}
+                className="press-scale rounded-lg bg-[#16A34A] text-white font-semibold px-6 py-3 hover:bg-[#15803D] hover:shadow-lg hover:shadow-[#16A34A]/20 transition-all"
+              >
+                🎟️ {t("submitAnotherButton") || "Submit Another Ticket"}
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
