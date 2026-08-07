@@ -40,6 +40,7 @@ export async function POST(request: NextRequest) {
 
   // 2. Reset every number FIRST — clear the payment_id reference before
   // touching payments, otherwise the foreign key blocks the delete below.
+  // Includes claim_notified now too, so no stale flags survive a reset.
   const { error: numbersError } = await supabaseAdmin
     .from("numbers")
     .update({
@@ -47,6 +48,7 @@ export async function POST(request: NextRequest) {
       phone_number: null,
       payment_id: null,
       assigned_at: null,
+      claim_notified: false,
     })
     .not("number", "is", null);
 
@@ -57,7 +59,9 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // 3. Now safe to wipe every payment record (also clears all reference numbers)
+  // 3. Now safe to wipe every payment record (also clears all reference
+  // numbers, telegram_message_id, and telegram_chat_id since the whole
+  // row goes away)
   const { error: paymentsError } = await supabaseAdmin
     .from("payments")
     .delete()
@@ -70,5 +74,24 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  return NextResponse.json({ success: true, screenshotsDeleted: paths.length });
+  // 4. Clear any in-progress Telegram bot conversations — otherwise
+  // someone mid-way through typing their name/phone/method before the
+  // reset would resume into a session referencing data that no longer
+  // makes sense in a fresh raffle round.
+  const { error: sessionsError } = await supabaseAdmin
+    .from("telegram_sessions")
+    .delete()
+    .not("chat_id", "is", null);
+
+  if (sessionsError) {
+    return NextResponse.json(
+      { error: `Clearing Telegram sessions failed: ${sessionsError.message}` },
+      { status: 500 },
+    );
+  }
+
+  return NextResponse.json({
+    success: true,
+    screenshotsDeleted: paths.length,
+  });
 }
