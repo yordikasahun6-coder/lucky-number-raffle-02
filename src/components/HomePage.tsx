@@ -45,12 +45,14 @@ export default function HomePage({
   settings,
   prizes,
   botUsername,
+  supportUsername,
 }: {
   assets: Record<string, string | null>;
   accounts: Account[];
   settings: Settings;
   prizes: Prize[];
   botUsername: string | null;
+  supportUsername: string | null;
 }) {
   const { t } = useLanguage();
 
@@ -335,7 +337,7 @@ export default function HomePage({
       <Reveal>
         <section className="max-w-3xl mx-auto px-5 pb-10 relative z-10">
           <div className="ticket-stub hover-lift px-6 py-6">
-            <StatusCheck />
+            <StatusCheck supportUsername={supportUsername} />
           </div>
         </section>
       </Reveal>

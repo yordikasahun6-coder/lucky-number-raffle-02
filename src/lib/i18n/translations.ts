@@ -86,6 +86,7 @@ export const translations = {
     backHome: "Back to home",
     ticketsAvailable: "ticket",
     pickLuckyTitle: "Pick Your Lucky Number",
+    contactTelegramButton: "Contact us on Telegram",
     checkStatusHint:
       'Use "Check Your Status" below anytime to see your approval',
     submitAnotherButton: "Submit Another Ticket",
@@ -226,6 +227,7 @@ export const translations = {
   am: {
     heroTitle1: "የሚቀጥለው ድል",
     heroTitle2: "የናንተ ሊሆን ይችላል",
+    contactTelegramButton: "በቴሌግራም ያግኙን",
     heroSubtitle:
       "ቀላል፣ ደህንነቱ የተጠበቀ እና ለመቀላቀል ቀላል። ዕድለኛ ቁጥርዎን ይምረጡ እና ምን እንደሚሆን ይመልከቱ።",
     badgeSecureTitle: "ደህንነቱ የተጠበቀ",
@@ -587,6 +589,7 @@ export const translations = {
     submitAnotherButton: "Tikkeettii Biroo Ergaa",
     faqTitle: "Gaaffiiwwan yeroo baay'ee gaafataman",
     faqQ1: "Tikeetii akkamittan bitadha?",
+    contactTelegramButton: "Telegram irratti nu qunnami",
     faqA1:
       "Mala kaffaltii armaan olii filadhu, kaffaltii ergi, ergasii unka 'Tikeetii Kee Biti' keessatti lakkoofsa bilbilaa fi maqaa kee guuti. Yoo dandeessan suuraa ragaa fa'i yookaan Telegram irratti ergaa.",
     faqQ2: "Kaffaltiin koo mirkanaa'uu isaa akkamittan beekadha?",

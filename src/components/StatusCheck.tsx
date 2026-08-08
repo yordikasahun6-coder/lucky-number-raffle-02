@@ -4,7 +4,11 @@ import { useState } from "react";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 import AnimatedCheck from "./AnimatedCheck";
 
-export default function StatusCheck() {
+export default function StatusCheck({
+  supportUsername,
+}: {
+  supportUsername: string | null;
+}) {
   const [phone, setPhone] = useState("");
   const [checking, setChecking] = useState(false);
   const [result, setResult] = useState<
@@ -111,7 +115,17 @@ export default function StatusCheck() {
 
       {result === "rejected" && (
         <div className="rounded-lg bg-[#FEF2F2] border border-[#FCA5A5] p-4 text-center">
-          <p className="text-red-700 text-sm">{t("statusRejected")}</p>
+          <p className="text-red-700 text-sm mb-3">{t("statusRejected")}</p>
+          {supportUsername && (
+            <a
+              href={`https://t.me/${supportUsername}`}
+              target="_blank"
+              rel="noreferrer"
+              className="press-scale inline-flex items-center gap-2 rounded-lg bg-[#229ED9] text-white text-xs font-semibold px-4 py-2.5 hover:bg-[#1B8BC0] transition-colors"
+            >
+              ✈️ {t("contactTelegramButton") || "Contact us on Telegram"}
+            </a>
+          )}
         </div>
       )}
 

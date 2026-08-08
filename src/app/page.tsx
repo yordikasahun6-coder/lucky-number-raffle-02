@@ -45,6 +45,7 @@ export default async function Page() {
       settings={settings}
       prizes={prizes || []}
       botUsername={process.env.TELEGRAM_BOT_USERNAME || null}
+      supportUsername={process.env.TELEGRAM_SUPPORT_USERNAME || null}
     />
   );
 }
