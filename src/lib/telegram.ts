@@ -74,6 +74,7 @@ export async function updateAdminTelegramStatus(params: {
   method: string;
   status: "approved" | "rejected";
   referenceNumber?: string | null;
+  ticketCount?: number;
 }) {
   const token = process.env.TELEGRAM_BOT_TOKEN;
   const chatId = process.env.TELEGRAM_ADMIN_CHAT_ID;
@@ -85,13 +86,19 @@ export async function updateAdminTelegramStatus(params: {
       ? `Status: ✅ *Approved*${params.referenceNumber ? ` (ref: ${params.referenceNumber})` : ""}`
       : `Status: ❌ *Rejected*`;
 
+  const ticketLine =
+    params.status === "approved" && params.ticketCount
+      ? `\n🎟️ Tickets granted: *${params.ticketCount}*\n`
+      : "";
+
   const newText =
     (params.status === "approved"
       ? `✅ *Payment approved*\n\n`
       : `❌ *Payment rejected*\n\n`) +
     `👤 Name: ${params.customerName}\n` +
     `📱 Phone: ${params.phoneNumber}\n` +
-    `💳 Method: ${params.method}\n\n` +
+    `💳 Method: ${params.method}\n` +
+    `${ticketLine}\n` +
     `${statusLine}`;
 
   try {

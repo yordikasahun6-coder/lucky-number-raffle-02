@@ -122,6 +122,7 @@ export async function POST(request: NextRequest) {
         method: payment.method,
         status: "approved",
         referenceNumber: reference_number.trim(),
+        ticketCount: count,
       });
     }
 
