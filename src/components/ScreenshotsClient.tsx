@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import StorageStats from "./StorageStats";
 import JSZip from "jszip";
 
 type PaymentRow = {
@@ -80,6 +81,8 @@ export default function ScreenshotsClient() {
   return (
     <main className="px-4 py-10">
       <div className="max-w-3xl mx-auto">
+        <StorageStats />
+
         <div className="flex items-baseline justify-between mb-6 border-b border-[#232D42] pb-6">
           <div>
             <p className="[font-family:var(--font-mono)] text-xs tracking-widest text-[#7C879C] uppercase mb-2">
