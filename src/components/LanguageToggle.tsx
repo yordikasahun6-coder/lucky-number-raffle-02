@@ -6,9 +6,8 @@ import { Lang } from "@/lib/i18n/translations";
 const options: { code: Lang; label: string; flag: string }[] = [
   { code: "en", label: "EN", flag: "🇬🇧" },
   { code: "am", label: "አማ", flag: "🇪🇹" },
-  { code: "om", label: "AO", flag: "🇪🇹" },
+  { code: "or", label: "AO", flag: "🇪🇹" },
 ];
-
 export default function LanguageToggle() {
   const { lang, setLang } = useLanguage();
   const activeIndex = options.findIndex((o) => o.code === lang);
