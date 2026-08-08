@@ -84,6 +84,33 @@ export async function POST(request: NextRequest) {
 
     const count = Number(ticket_count) > 0 ? Number(ticket_count) : 1;
 
+    // Refuse to promise more tickets than physically remain unclaimed —
+    // this is the real safety check, not just a UI hint, since it's
+    // the only thing that can never accidentally be bypassed.
+    const { count: availableCount } = await supabaseAdmin
+      .from("numbers")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "available");
+
+    const { data: credits } = await supabaseAdmin
+      .from("available_credits")
+      .select("remaining");
+
+    const outstandingCredits = (credits || []).reduce(
+      (sum, c) => sum + c.remaining,
+      0,
+    );
+    const safeMax = Math.max(0, (availableCount || 0) - outstandingCredits);
+
+    if (count > safeMax) {
+      return NextResponse.json(
+        {
+          error: `Only ${safeMax} ticket${safeMax !== 1 ? "s" : ""} can safely be granted right now — ${outstandingCredits} are already promised to other approved customers. Approve fewer, or wait for someone to claim their numbers.`,
+        },
+        { status: 409 },
+      );
+    }
+
     const { data: payment } = await supabaseAdmin
       .from("payments")
       .select(

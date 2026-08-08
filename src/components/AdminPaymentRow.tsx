@@ -14,6 +14,7 @@ type Payment = {
 export default function AdminPaymentRow({ payment }: { payment: Payment }) {
   const [reference, setReference] = useState("");
   const [ticketCount, setTicketCount] = useState(1);
+  const [safeMax, setSafeMax] = useState<number | null>(null);
   const [checkState, setCheckState] = useState<
     "idle" | "checking" | "clear" | "used"
   >("idle");
@@ -47,6 +48,12 @@ export default function AdminPaymentRow({ payment }: { payment: Payment }) {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
   }, [reference]);
+  useEffect(() => {
+    fetch("/api/admin/capacity")
+      .then((res) => res.json())
+      .then((data) => setSafeMax(data.safeMax))
+      .catch(() => setSafeMax(null));
+  }, []);
 
   async function handleAction(action: "approve" | "reject") {
     setBusy(true);
@@ -156,18 +163,32 @@ export default function AdminPaymentRow({ payment }: { payment: Payment }) {
         )}
         {error && <p className="text-[#E15B4F] text-xs mb-3">{error}</p>}
 
-        <div className="flex items-center gap-2 mb-3">
+        <div className="flex items-center gap-2 mb-1">
           <label className="text-xs text-[#7C879C]">Tickets to grant:</label>
           <input
             type="number"
             min="1"
+            max={safeMax ?? undefined}
             value={ticketCount}
             onChange={(e) =>
               setTicketCount(Math.max(1, Number(e.target.value)))
             }
-            className="w-16 rounded bg-[#0B0F17] border border-[#232D42] px-2 py-1 [font-family:var(--font-mono)] text-[#EDEFF3] text-sm text-center"
+            className={`w-16 rounded bg-[#0B0F17] border px-2 py-1 [font-family:var(--font-mono)] text-sm text-center ${
+              safeMax !== null && ticketCount > safeMax
+                ? "border-[#E15B4F] text-[#E15B4F]"
+                : "border-[#232D42] text-[#EDEFF3]"
+            }`}
           />
         </div>
+        {safeMax !== null && (
+          <p
+            className={`text-[11px] mb-3 ${ticketCount > safeMax ? "text-[#E15B4F]" : "text-[#7C879C]"}`}
+          >
+            {safeMax === 0
+              ? "⚠ Sold out — no tickets can currently be approved"
+              : `${safeMax} ticket${safeMax !== 1 ? "s" : ""} safely available right now`}
+          </p>
+        )}
 
         <div className="flex gap-2 mt-3">
           <button
