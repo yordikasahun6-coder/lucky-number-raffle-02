@@ -14,6 +14,7 @@ export default function StatusCheck({
   const [result, setResult] = useState<
     "approved" | "pending" | "used_up" | "rejected" | "not_found" | null
   >(null);
+  const [customerName, setCustomerName] = useState("");
   const { t } = useLanguage();
 
   async function handleCheck(e: React.FormEvent) {
@@ -27,6 +28,7 @@ export default function StatusCheck({
     );
     const data = await res.json();
     setResult(data.status);
+    setCustomerName(data.customerName || "");
     setChecking(false);
   }
 
@@ -79,6 +81,14 @@ export default function StatusCheck({
             </div>
 
             <div className="content-reveal" style={{ animationDelay: "0.5s" }}>
+              {customerName && (
+                <p className="text-[#6B8A78] text-xs uppercase tracking-wide font-semibold mb-1">
+                  {(t("greetingLabel") || "Hey {name} 👋").replace(
+                    "{name}",
+                    customerName.split(" ")[0],
+                  )}
+                </p>
+              )}
               <p className="[font-family:var(--font-fraunces)] text-2xl font-bold text-[#0F5132] mb-1">
                 {t("statusApprovedTitle") || "You're Approved!"}
               </p>

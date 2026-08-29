@@ -104,17 +104,38 @@ export default function PickNumberClient({
     });
     const result = await res.json();
     if (!res.ok) {
-      setError(result.error || "Could not claim that number.");
+      const wasRaceCondition =
+        res.status === 409 && (result.error || "").includes("just claimed");
+      setError(
+        wasRaceCondition
+          ? "That number was just taken by someone else — here's a fresh one for you instead."
+          : result.error || "Could not claim that number.",
+      );
+      setSelected(null);
       setConfirming(false);
       setShake(true);
       setTimeout(() => setShake(false), 400);
       await refreshStatus();
+
+      // Immediately offer a new random pick so they're not left to start over
+      if (wasRaceCondition) {
+        setTimeout(() => pickRandomForRaceRecovery(), 600);
+      }
       return;
     }
     setJustClaimed(result.number);
     setSelected(null);
     await refreshStatus();
     setConfirming(false);
+  }
+
+  async function pickRandomForRaceRecovery() {
+    const res = await fetch("/api/numbers/preview-random");
+    const result = await res.json();
+    if (res.ok) {
+      setSelected(result.number);
+      setError("");
+    }
   }
 
   async function pickRandom() {

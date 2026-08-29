@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import StorageStats from "./StorageStats";
 import JSZip from "jszip";
+import StorageStats from "./StorageStats";
 
 type PaymentRow = {
   id: string;
@@ -19,12 +19,20 @@ export default function ScreenshotsClient() {
   const [loading, setLoading] = useState(true);
   const [zipping, setZipping] = useState(false);
   const [zipProgress, setZipProgress] = useState(0);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/admin/screenshots")
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to fetch screenshots");
+        return res.json();
+      })
       .then((result) => {
         setPayments(result.payments || []);
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error("Error fetching screenshots:", error);
         setLoading(false);
       });
   }, []);
@@ -36,11 +44,23 @@ export default function ScreenshotsClient() {
       )
     )
       return;
-    const res = await fetch(`/api/admin/screenshots/${id}`, {
-      method: "DELETE",
-    });
-    if (res.ok) {
-      setPayments(payments.filter((p) => p.id !== id));
+
+    setDeletingId(id);
+    try {
+      const res = await fetch(`/api/admin/screenshots/${id}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        setPayments(payments.filter((p) => p.id !== id));
+      } else {
+        const error = await res.json();
+        alert(error.error || "Failed to delete screenshot");
+      }
+    } catch (error) {
+      console.error("Error deleting screenshot:", error);
+      alert("Network error. Please try again.");
+    } finally {
+      setDeletingId(null);
     }
   }
 
@@ -55,6 +75,7 @@ export default function ScreenshotsClient() {
         const res = await fetch(
           `/api/payments/screenshot?path=${encodeURIComponent(p.screenshot_url)}&download=1`,
         );
+        if (!res.ok) throw new Error("Failed to fetch screenshot");
         const blob = await res.blob();
         const ext = p.screenshot_url.split(".").pop() || "jpg";
         const safeName = p.phone_number.replace(/[^0-9]/g, "");
@@ -79,77 +100,97 @@ export default function ScreenshotsClient() {
   }
 
   return (
-    <main className="px-4 py-10">
-      <div className="max-w-3xl mx-auto">
-        <StorageStats />
+    <main className="px-6 py-8 md:px-10 md:py-10">
+      <StorageStats />
 
-        <div className="flex items-baseline justify-between mb-6 border-b border-[#232D42] pb-6">
-          <div>
-            <p className="[font-family:var(--font-mono)] text-xs tracking-widest text-[#7C879C] uppercase mb-2">
-              Backup
-            </p>
-            <h1 className="[font-family:var(--font-fraunces)] text-3xl text-[#EDEFF3]">
-              Payment screenshots
-            </h1>
-          </div>
-          <button
-            onClick={downloadAll}
-            disabled={zipping || payments.length === 0}
-            className="rounded bg-[#D4A24C] text-[#0B0F17] text-sm font-medium px-4 py-2.5 disabled:opacity-50"
-          >
-            {zipping
-              ? `Zipping... ${zipProgress}%`
-              : `Download all (${payments.length})`}
-          </button>
+      <div className="flex items-start justify-between mb-8 flex-wrap gap-4">
+        <div>
+          <p className="[font-family:var(--font-mono)] text-xs tracking-widest text-[#8B4DFF] uppercase mb-1">
+            Backup
+          </p>
+          <h1 className="[font-family:var(--font-fraunces)] text-4xl font-bold text-[#F5F7FA]">
+            Payment screenshots
+          </h1>
         </div>
+        <button
+          onClick={downloadAll}
+          disabled={zipping || payments.length === 0}
+          className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#D9A63A] to-[#F2C14E] text-[#0B111C] text-sm font-bold px-5 py-3 disabled:opacity-40 hover:opacity-90 transition-opacity"
+        >
+          {zipping
+            ? `⬇ Zipping... ${zipProgress}%`
+            : `⬇ Download all (${payments.length})`}
+        </button>
+      </div>
 
-        {loading ? (
-          <p className="text-[#7C879C] text-sm [font-family:var(--font-mono)]">
-            Loading...
-          </p>
-        ) : payments.length === 0 ? (
-          <p className="text-[#7C879C] text-sm [font-family:var(--font-mono)]">
-            No screenshots uploaded yet.
-          </p>
-        ) : (
-          <div className="grid sm:grid-cols-2 gap-3">
-            {payments.map((p) => (
-              <div
-                key={p.id}
-                className="rounded bg-[#141B29] border border-[#232D42] p-3 flex items-center gap-3"
-              >
+      {loading ? (
+        <p className="text-[#64748B] text-sm [font-family:var(--font-mono)]">
+          Loading...
+        </p>
+      ) : payments.length === 0 ? (
+        <p className="text-[#64748B] text-sm [font-family:var(--font-mono)]">
+          No screenshots uploaded yet.
+        </p>
+      ) : (
+        <div className="grid sm:grid-cols-2 gap-4">
+          {payments.map((p) => (
+            <div
+              key={p.id}
+              className="rounded-2xl bg-[#131C2B] border border-[#26344A] p-4 flex items-center gap-4"
+            >
+              <div className="relative shrink-0">
                 <img
                   src={`/api/payments/screenshot?path=${encodeURIComponent(p.screenshot_url)}`}
-                  alt=""
-                  className="w-14 h-14 rounded object-cover shrink-0"
+                  alt={`Screenshot for ${p.customer_name}`}
+                  className="w-20 h-20 rounded-xl object-cover"
                 />
-                <div className="flex-1 min-w-0">
-                  <p className="text-[#EDEFF3] text-sm truncate">
-                    {p.customer_name}
-                  </p>
-                  <p className="[font-family:var(--font-mono)] text-xs text-[#7C879C]">
-                    {p.phone_number} · {p.status}
-                  </p>
-                </div>
-                <div className="flex flex-col gap-1.5 items-end shrink-0">
-                  <a
-                    href={`/api/payments/screenshot?path=${encodeURIComponent(p.screenshot_url)}&download=1`}
-                    className="text-[#D4A24C] text-xs underline"
-                  >
-                    Download
-                  </a>
-                  <button
-                    onClick={() => deleteScreenshot(p.id)}
-                    className="text-[#E15B4F] text-xs underline"
-                  >
-                    Delete
-                  </button>
-                </div>
+                {p.status === "approved" && (
+                  <span className="absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full bg-[#22C55E] border-2 border-[#131C2B] flex items-center justify-center text-white text-xs">
+                    ✓
+                  </span>
+                )}
               </div>
-            ))}
-          </div>
-        )}
-      </div>
+
+              <div className="flex-1 min-w-0">
+                <p className="text-[#F5F7FA] font-semibold truncate">
+                  {p.customer_name}
+                </p>
+                <p className="[font-family:var(--font-mono)] text-sm text-[#9AA7BC]">
+                  {p.phone_number}
+                </p>
+                <span
+                  className={`inline-flex items-center gap-1.5 text-xs mt-1 ${
+                    p.status === "approved"
+                      ? "text-[#22C55E]"
+                      : p.status === "rejected"
+                        ? "text-[#EF476F]"
+                        : "text-[#D9A63A]"
+                  }`}
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-current" />{" "}
+                  {p.status}
+                </span>
+              </div>
+
+              <div className="flex flex-col gap-1.5 items-end shrink-0 text-sm">
+                <a
+                  href={`/api/payments/screenshot?path=${encodeURIComponent(p.screenshot_url)}&download=1`}
+                  className="flex items-center gap-1.5 text-[#D9A63A] hover:text-[#F2C14E] transition-colors"
+                >
+                  ⬇ Download
+                </a>
+                <button
+                  onClick={() => deleteScreenshot(p.id)}
+                  disabled={deletingId === p.id}
+                  className="flex items-center gap-1.5 text-[#EF476F] hover:text-[#F5F7FA] transition-colors disabled:opacity-50"
+                >
+                  {deletingId === p.id ? "⏳ Deleting..." : "🗑 Delete"}
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </main>
   );
 }

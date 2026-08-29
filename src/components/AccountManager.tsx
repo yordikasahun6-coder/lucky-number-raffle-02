@@ -18,19 +18,57 @@ export default function AccountManager({
   initialAccounts: Account[];
 }) {
   const [accounts, setAccounts] = useState<Account[]>(initialAccounts);
-  const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+
   const [name, setName] = useState("");
   const [holder, setHolder] = useState("");
   const [number, setNumber] = useState("");
   const [logo, setLogo] = useState<File | null>(null);
   const [qrCode, setQrCode] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [qrPreview, setQrPreview] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  async function handleAdd(e: React.FormEvent) {
+  function resetForm() {
+    setEditingId(null);
+    setName("");
+    setHolder("");
+    setNumber("");
+    setLogo(null);
+    setQrCode(null);
+    setLogoPreview(null);
+    setQrPreview(null);
+    setError("");
+  }
+
+  function startEdit(a: Account) {
+    setEditingId(a.id);
+    setName(a.name);
+    setHolder(a.account_holder);
+    setNumber(a.account_number);
+    setLogoPreview(a.logo_url);
+    setQrPreview(a.qr_code_url);
+    setLogo(null);
+    setQrCode(null);
+    window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+  }
+
+  function handleFilePreview(
+    file: File,
+    setFile: (f: File) => void,
+    setPreview: (s: string) => void,
+  ) {
+    setFile(file);
+    const reader = new FileReader();
+    reader.onload = () => setPreview(reader.result as string);
+    reader.readAsDataURL(file);
+  }
+
+  async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     if (!name || !holder || !number) {
-      setError("Fill in all fields.");
+      setError("Fill in method name, account holder, and account number.");
       return;
     }
     setSaving(true);
@@ -43,25 +81,30 @@ export default function AccountManager({
     if (logo) formData.append("logo", logo);
     if (qrCode) formData.append("qr_code", qrCode);
 
-    const res = await fetch("/api/admin/accounts", {
-      method: "POST",
-      body: formData,
-    });
-    const result = await res.json();
-
-    if (!res.ok) {
-      setError(result.error || "Could not save.");
-      setSaving(false);
-      return;
+    try {
+      if (editingId) {
+        const res = await fetch(`/api/admin/accounts/${editingId}`, {
+          method: "PATCH",
+          body: formData,
+        });
+        if (!res.ok)
+          throw new Error((await res.json()).error || "Could not save.");
+        const res2 = await fetch("/api/admin/accounts");
+        const data = await res2.json();
+        setAccounts(data.accounts || []);
+      } else {
+        const res = await fetch("/api/admin/accounts", {
+          method: "POST",
+          body: formData,
+        });
+        const result = await res.json();
+        if (!res.ok) throw new Error(result.error || "Could not save.");
+        setAccounts([...accounts, result.account]);
+      }
+      resetForm();
+    } catch (err: any) {
+      setError(err.message || "Could not save.");
     }
-
-    setAccounts([...accounts, result.account]);
-    setName("");
-    setHolder("");
-    setNumber("");
-    setLogo(null);
-    setQrCode(null);
-    setShowForm(false);
     setSaving(false);
   }
 
@@ -80,133 +123,253 @@ export default function AccountManager({
     if (!confirm("Delete this payment method?")) return;
     await fetch(`/api/admin/accounts/${id}`, { method: "DELETE" });
     setAccounts(accounts.filter((a) => a.id !== id));
+    if (editingId === id) resetForm();
   }
 
   return (
-    <div>
-      <div className="space-y-3 mb-6">
+    <main className="px-6 py-8 md:px-10 md:py-10">
+      <div className="mb-6">
+        <p className="[font-family:var(--font-mono)] text-xs tracking-widest text-[#8B4DFF] uppercase mb-1">
+          Settings
+        </p>
+        <h1 className="text-3xl font-bold text-[#F5F7FA] mb-1">
+          Payment methods
+        </h1>
+        <p className="text-[#9AA7BC] text-sm">
+          Manage payment methods used by users to purchase tickets.
+        </p>
+        <div className="w-10 h-1 rounded-full bg-[#6D35D8] mt-3" />
+      </div>
+
+      <div className="flex items-center justify-between mb-4">
+        <p className="text-[#F5F7FA] font-semibold">Existing payment methods</p>
+        <button
+          onClick={() => {
+            resetForm();
+            window.scrollTo({
+              top: document.body.scrollHeight,
+              behavior: "smooth",
+            });
+          }}
+          className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#D9A63A] to-[#F2C14E] text-[#0B111C] text-sm font-bold px-5 py-2.5 hover:opacity-90 transition-opacity"
+        >
+          + Add new method
+        </button>
+      </div>
+
+      <div className="space-y-3 mb-8">
         {accounts.map((a) => (
           <div
             key={a.id}
-            className="rounded bg-[#141B29] border border-[#232D42] p-4 flex items-center gap-4"
+            className="rounded-2xl bg-[#131C2B] border border-[#26344A] px-5 py-4 flex items-center gap-4"
           >
+            <span className="text-[#64748B] cursor-grab select-none text-sm tracking-widest">
+              ⠿⠿⠿
+            </span>
+
             {a.logo_url ? (
               <img
                 src={a.logo_url}
                 alt={a.name}
-                className="w-10 h-10 rounded object-cover"
+                className="w-11 h-11 rounded-xl object-cover shrink-0"
               />
             ) : (
-              <div className="w-10 h-10 rounded bg-[#232D42]" />
+              <div className="w-11 h-11 rounded-xl bg-[#172133] shrink-0" />
             )}
-            <div className="flex-1">
-              <p className="text-[#EDEFF3] text-sm font-medium">{a.name}</p>
-              <p className="[font-family:var(--font-mono)] text-xs text-[#7C879C]">
-                {a.account_holder} · {a.account_number}
+
+            <div className="flex-1 min-w-0">
+              <p className="text-[#F5F7FA] font-semibold truncate">{a.name}</p>
+              <p className="[font-family:var(--font-mono)] text-xs text-[#9AA7BC]">
+                {a.account_holder} <span className="text-[#64748B]">•</span>{" "}
+                {a.account_number}
               </p>
               {a.qr_code_url && (
-                <p className="text-[10px] text-[#4FBF8B] mt-0.5">
+                <p className="text-[#22C55E] text-xs mt-0.5">
                   ✓ QR code attached
                 </p>
               )}
             </div>
+
             <button
               onClick={() => toggleActive(a.id, a.active)}
-              className={`text-xs px-3 py-1.5 rounded ${a.active ? "bg-[#4FBF8B]/10 text-[#4FBF8B]" : "bg-[#232D42] text-[#7C879C]"}`}
+              className={`shrink-0 flex items-center gap-1.5 rounded-full text-xs font-semibold px-3.5 py-1.5 transition-colors ${
+                a.active
+                  ? "bg-[#123522] border border-[#22C55E]/40 text-[#22C55E]"
+                  : "bg-[#172133] border border-[#26344A] text-[#64748B]"
+              }`}
             >
+              <span className="w-1.5 h-1.5 rounded-full bg-current" />{" "}
               {a.active ? "Active" : "Hidden"}
+            </button>
+
+            <button
+              onClick={() => startEdit(a)}
+              className="shrink-0 w-9 h-9 rounded-lg bg-[#172133] border border-[#26344A] flex items-center justify-center text-[#9AA7BC] hover:border-[#6D35D8] hover:text-[#8B4DFF] transition-colors"
+            >
+              ✏️
             </button>
             <button
               onClick={() => remove(a.id)}
-              className="text-[#E15B4F] text-xs px-2"
+              className="shrink-0 w-9 h-9 rounded-lg bg-[#351722] border border-[#EF476F]/30 flex items-center justify-center text-[#EF476F] hover:bg-[#EF476F] hover:text-white transition-colors"
             >
-              Delete
+              🗑
             </button>
           </div>
         ))}
         {accounts.length === 0 && (
-          <p className="text-[#7C879C] text-sm">
-            No payment methods yet — customers will see nothing to pay to until
-            you add one.
+          <p className="text-[#64748B] text-sm">
+            No payment methods yet — customers will see nothing until you add
+            one.
           </p>
         )}
       </div>
 
-      {!showForm ? (
-        <button
-          onClick={() => setShowForm(true)}
-          className="rounded bg-[#D4A24C] text-[#0B0F17] font-medium px-5 py-2.5 text-sm"
-        >
-          + Add payment method
-        </button>
-      ) : (
-        <form
-          onSubmit={handleAdd}
-          className="rounded bg-[#141B29] border border-[#232D42] p-5 space-y-3"
-        >
-          <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Method name (e.g. Commercial Bank of Ethiopia)"
-            className="w-full rounded bg-[#0B0F17] border border-[#232D42] px-3 py-2 text-[#EDEFF3] text-sm placeholder-[#4A5468]"
-          />
-          <input
-            value={holder}
-            onChange={(e) => setHolder(e.target.value)}
-            placeholder="Account holder name"
-            className="w-full rounded bg-[#0B0F17] border border-[#232D42] px-3 py-2 text-[#EDEFF3] text-sm placeholder-[#4A5468]"
-          />
-          <input
-            value={number}
-            onChange={(e) => setNumber(e.target.value)}
-            placeholder="Account number"
-            className="w-full rounded bg-[#0B0F17] border border-[#232D42] px-3 py-2 text-[#EDEFF3] text-sm placeholder-[#4A5468]"
-          />
-          <div>
-            <label className="block text-xs text-[#7C879C] mb-1.5">Logo</label>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => setLogo(e.target.files?.[0] || null)}
-              className="w-full text-sm text-[#7C879C] file:mr-3 file:rounded-lg file:border-0 file:bg-[#D4A24C] file:text-[#0B0F17] file:px-4 file:py-2 file:text-sm file:font-medium file:cursor-pointer hover:file:bg-[#E0AF5C] file:transition-colors"
-            />
-            {logo && (
-              <p className="text-[10px] text-[#4FBF8B] mt-1">✓ {logo.name}</p>
-            )}
+      <form
+        onSubmit={handleSave}
+        className="rounded-2xl bg-[#131C2B] border-2 border-[#6D35D8]/40 p-6"
+      >
+        <div className="flex items-center gap-2 mb-6">
+          <span className="text-[#8B4DFF]">💳</span>
+          <p className="text-[#8B4DFF] font-semibold">
+            {editingId ? "Edit payment method" : "Add new payment method"}
+          </p>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-6">
+          <div className="space-y-5">
+            <div>
+              <label className="block text-sm text-[#F5F7FA] mb-1.5">
+                Method name
+              </label>
+              <input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="e.g. Commercial Bank of Ethiopia"
+                className="w-full rounded-xl bg-[#080D16] border border-[#26344A] px-4 py-3 text-[#F5F7FA] text-sm placeholder-[#64748B] focus:outline-none focus:border-[#6D35D8]"
+              />
+            </div>
+            <div>
+              <label className="block text-sm text-[#F5F7FA] mb-1.5">
+                Account holder name
+              </label>
+              <input
+                value={holder}
+                onChange={(e) => setHolder(e.target.value)}
+                placeholder="Full name of account holder"
+                className="w-full rounded-xl bg-[#080D16] border border-[#26344A] px-4 py-3 text-[#F5F7FA] text-sm placeholder-[#64748B] focus:outline-none focus:border-[#6D35D8]"
+              />
+            </div>
+            <div>
+              <label className="block text-sm text-[#F5F7FA] mb-1.5">
+                Account number
+              </label>
+              <input
+                value={number}
+                onChange={(e) => setNumber(e.target.value)}
+                placeholder="Enter account number"
+                className="w-full rounded-xl bg-[#080D16] border border-[#26344A] px-4 py-3 text-[#F5F7FA] text-sm placeholder-[#64748B] focus:outline-none focus:border-[#6D35D8]"
+              />
+            </div>
           </div>
-          <div>
-            <label className="block text-xs text-[#7C879C] mb-1.5">
-              QR code (optional)
-            </label>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => setQrCode(e.target.files?.[0] || null)}
-              className="w-full text-sm text-[#7C879C] file:mr-3 file:rounded-lg file:border-0 file:bg-[#D4A24C] file:text-[#0B0F17] file:px-4 file:py-2 file:text-sm file:font-medium file:cursor-pointer hover:file:bg-[#E0AF5C] file:transition-colors"
-            />
-            {qrCode && (
-              <p className="text-[10px] text-[#4FBF8B] mt-1">✓ {qrCode.name}</p>
-            )}
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm text-[#F5F7FA] mb-1.5">
+                Logo <span className="text-[#64748B]">(optional)</span>
+              </label>
+              <label className="cursor-pointer flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[#26344A] hover:border-[#6D35D8] transition-colors h-36 text-center px-2">
+                {logoPreview ? (
+                  <img
+                    src={logoPreview}
+                    alt=""
+                    className="max-h-20 max-w-full object-contain rounded"
+                  />
+                ) : (
+                  <>
+                    <span className="w-9 h-9 rounded-full bg-[#29164F] flex items-center justify-center text-[#8B4DFF]">
+                      ⬆
+                    </span>
+                    <span className="text-[#F5F7FA] text-xs font-medium">
+                      Click to upload logo
+                    </span>
+                    <span className="text-[#64748B] text-[10px]">
+                      PNG, JPG (max 2MB)
+                    </span>
+                  </>
+                )}
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) handleFilePreview(f, setLogo, setLogoPreview);
+                  }}
+                />
+              </label>
+            </div>
+
+            <div>
+              <label className="block text-sm text-[#F5F7FA] mb-1.5">
+                QR Code <span className="text-[#64748B]">(optional)</span>
+              </label>
+              <label className="cursor-pointer flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[#26344A] hover:border-[#6D35D8] transition-colors h-36 text-center px-2">
+                {qrPreview ? (
+                  <img
+                    src={qrPreview}
+                    alt=""
+                    className="max-h-20 max-w-full object-contain rounded"
+                  />
+                ) : (
+                  <>
+                    <span className="w-9 h-9 rounded-full bg-[#29164F] flex items-center justify-center text-[#8B4DFF]">
+                      ▦
+                    </span>
+                    <span className="text-[#F5F7FA] text-xs font-medium">
+                      Click to upload QR code
+                    </span>
+                    <span className="text-[#64748B] text-[10px]">
+                      PNG, JPG (max 2MB)
+                    </span>
+                  </>
+                )}
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) handleFilePreview(f, setQrCode, setQrPreview);
+                  }}
+                />
+              </label>
+            </div>
           </div>
-          {error && <p className="text-[#E15B4F] text-xs">{error}</p>}
-          <div className="flex gap-2">
-            <button
-              type="submit"
-              disabled={saving}
-              className="rounded bg-[#D4A24C] text-[#0B0F17] text-sm font-medium px-4 py-2 disabled:opacity-50"
-            >
-              {saving ? "Saving..." : "Save"}
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowForm(false)}
-              className="text-[#7C879C] text-sm px-4 py-2"
-            >
-              Cancel
-            </button>
-          </div>
-        </form>
-      )}
-    </div>
+        </div>
+
+        {error && <p className="text-[#EF476F] text-xs mt-4">{error}</p>}
+
+        <div className="flex justify-end gap-3 mt-6">
+          <button
+            type="button"
+            onClick={resetForm}
+            className="flex items-center gap-1.5 rounded-xl border border-[#26344A] text-[#9AA7BC] text-sm px-5 py-2.5 hover:border-[#6D35D8] transition-colors"
+          >
+            ✕ Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={saving}
+            className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#D9A63A] to-[#F2C14E] text-[#0B111C] text-sm font-bold px-6 py-2.5 disabled:opacity-50 hover:opacity-90 transition-opacity"
+          >
+            {saving
+              ? "Saving..."
+              : editingId
+                ? "Update Method"
+                : "💾 Save Method"}
+          </button>
+        </div>
+      </form>
+    </main>
   );
 }

@@ -22,27 +22,26 @@ export default function StorageStats() {
   }, []);
 
   return (
-    <div className="rounded bg-[#141B29] border border-[#232D42] p-4 flex items-center justify-between mb-6">
-      <div className="flex items-center gap-3">
-        <span className="w-10 h-10 rounded-full bg-[#D4A24C]/10 flex items-center justify-center text-lg">
-          🗄️
-        </span>
-        <div>
-          <p className="text-[#7C879C] text-xs">Screenshot storage used</p>
-          {loading ? (
-            <p className="text-[#4A5468] text-sm [font-family:var(--font-mono)]">
-              Calculating...
-            </p>
-          ) : (
-            <p className="[font-family:var(--font-mono)] text-lg font-bold text-[#D4A24C]">
+    <div className="rounded-2xl bg-[#131C2B] border border-[#26344A] px-6 py-5 flex items-center gap-4 mb-8">
+      <div className="w-11 h-11 rounded-xl bg-[#29164F] flex items-center justify-center text-lg text-[#8B4DFF]">
+        🗄️
+      </div>
+      <div>
+        <p className="text-[#9AA7BC] text-sm mb-0.5">Screenshot storage used</p>
+        {loading ? (
+          <p className="text-[#64748B] text-sm [font-family:var(--font-mono)]">
+            Calculating...
+          </p>
+        ) : (
+          <p className="flex items-baseline gap-2">
+            <span className="[font-family:var(--font-fraunces)] text-2xl font-bold text-[#D9A63A]">
               {stats?.totalFormatted || "0 B"}
-              <span className="text-[#7C879C] text-xs font-normal ml-2">
-                ({stats?.fileCount || 0} file{stats?.fileCount !== 1 ? "s" : ""}
-                )
-              </span>
-            </p>
-          )}
-        </div>
+            </span>
+            <span className="text-[#64748B] text-sm">
+              ({stats?.fileCount || 0} file{stats?.fileCount !== 1 ? "s" : ""})
+            </span>
+          </p>
+        )}
       </div>
     </div>
   );

@@ -106,6 +106,7 @@ export const translations = {
     trustLabel: "Trust & transparency",
     trustCardDraw: "Draw is live",
     trustCardUnique: "Unique number",
+    greetingLabel: "Hey {name} 👋",
     trustCardSms: "SMS confirmation",
     trustCardSecure: "Secure payment",
     trustCardNoModify: "Admin cannot modify selected numbers",
@@ -336,6 +337,7 @@ export const translations = {
     confirmButton: "ይህን ቁጥር ያረጋግጡ",
     justNow: "አሁን",
     minuteAgo: "ደቂቃ በፊት",
+    greetingLabel: "{name} ሰላም 👋",
     minutesAgo: "ደቂቃዎች በፊት",
     hourAgo: "ሰዓት በፊት",
     footerTelegramTitle: "የቴሌግራም ድጋፍ",
@@ -583,6 +585,8 @@ export const translations = {
     uploadFormats: "PNG, JPG, ykn PDF",
     uploadMaxSize: "Hamma 5MB",
     confirming: "Mirkaneessaa Jira...",
+
+    greetingLabel: "Akkam {name} 👋",
     faqLabel: "Gaaffiiwwan",
     checkStatusHint:
       '"Haala Keessan Mirkaneessaa" gadii yeroo barbaaddanitti fayyadamii mirkaneessa keessan ilaaluuf',
