@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Fraunces, JetBrains_Mono, Manrope } from "next/font/google";
 import { LanguageProvider } from "@/lib/i18n/LanguageContext";
 import "./globals.css";
+import HelpWidget from "@/components/HelpWidget";
 
 const fraunces = Fraunces({
   subsets: ["latin"],
@@ -33,7 +34,10 @@ export default function RootLayout({
       <body
         className={`${fraunces.variable} ${mono.variable} ${manrope.variable} antialiased`}
       >
-        <LanguageProvider>{children}</LanguageProvider>
+        <LanguageProvider>
+          {children}
+          <HelpWidget />
+        </LanguageProvider>
       </body>
     </html>
   );

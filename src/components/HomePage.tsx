@@ -12,6 +12,7 @@ import TicketProgress from "./TicketProgress";
 import PrizeDisclaimer from "./PrizeDisclaimer";
 import QuickAnswers from "./QuickAnswers";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
+import SupportSection from "./SupportSection";
 import FAQSection from "./FAQSection";
 import LanguageToggle from "./LanguageToggle";
 
@@ -39,6 +40,18 @@ type Prize = {
   image_url: string | null;
 };
 
+type SupportMember = {
+  id: string;
+  name: string;
+  description: string | null;
+  avatar_url: string | null;
+  response_time: string;
+  telegram_url: string | null;
+  instagram_url: string | null;
+  whatsapp_url: string | null;
+  email: string | null;
+};
+
 export default function HomePage({
   assets,
   accounts,
@@ -46,6 +59,7 @@ export default function HomePage({
   prizes,
   botUsername,
   supportUsername,
+  supportMembers,
 }: {
   assets: Record<string, string | null>;
   accounts: Account[];
@@ -53,6 +67,7 @@ export default function HomePage({
   prizes: Prize[];
   botUsername: string | null;
   supportUsername: string | null;
+  supportMembers: SupportMember[];
 }) {
   const { t } = useLanguage();
 
@@ -379,7 +394,13 @@ export default function HomePage({
           <FAQSection />
         </section>
       </Reveal>
+      <Reveal>
+        <section className="max-w-3xl mx-auto px-5 pb-14 relative z-10">
+          <SupportSection members={supportMembers} />
+        </section>
+      </Reveal>
 
+      <footer className="bg-[#0F5132] py-10 relative z-10"></footer>
       <footer className="bg-[#0F5132] py-10 relative z-10"></footer>
       <footer className="bg-[#0F5132] py-10 relative z-10">
         <div className="max-w-3xl mx-auto px-5 grid grid-cols-2 md:grid-cols-4 gap-6">

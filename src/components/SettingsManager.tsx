@@ -110,7 +110,9 @@ export default function SettingsManager({
 
       <div className="grid lg:grid-cols-2 gap-5">
         {/* Ticket pool card */}
-        <div className="rounded-2xl bg-[#131C2B] border border-[#26344A] p-6">
+        <div
+          className={`rounded-2xl bg-[#131C2B] border p-6 ${maxNumber !== currentMax ? "border-[#D9A63A]" : "border-[#26344A]"}`}
+        >
           <div className="flex items-center gap-3 mb-4">
             <span className="w-10 h-10 rounded-xl bg-[#29164F] flex items-center justify-center text-[#8B4DFF]">
               🎟️
@@ -122,29 +124,35 @@ export default function SettingsManager({
               </p>
             </div>
           </div>
-          <div className="flex gap-2 mb-2">
+          <div className="space-y-2 mb-2">
             <input
               type="number"
               min="1"
               value={maxNumber}
               onChange={(e) => setMaxNumber(Number(e.target.value))}
-              className="flex-1 rounded-xl bg-[#080D16] border border-[#26344A] px-4 py-2.5 [font-family:var(--font-mono)] text-[#F5F7FA] text-sm focus:outline-none focus:border-[#6D35D8]"
+              className="w-full rounded-xl bg-[#080D16] border border-[#26344A] px-4 py-2.5 [font-family:var(--font-mono)] text-[#F5F7FA] text-base focus:outline-none focus:border-[#6D35D8]"
             />
             <button
               type="button"
               onClick={handleResize}
               disabled={resizing || maxNumber === currentMax}
-              className="rounded-xl bg-gradient-to-r from-[#6D35D8] to-[#8B4DFF] text-white text-sm font-semibold px-5 disabled:opacity-40 hover:opacity-90 transition-opacity"
+              className="w-full rounded-xl bg-gradient-to-r from-[#6D35D8] to-[#8B4DFF] text-white text-sm font-semibold px-5 py-2.5 disabled:opacity-40 hover:opacity-90 transition-opacity"
             >
               {resizing ? "..." : "Apply"}
             </button>
           </div>
+          {maxNumber !== currentMax && !resizing && (
+            <p className="text-[#D9A63A] text-xs font-semibold mb-2">
+              ⚠ Unsaved — click "Apply" above to change the pool size. The main
+              "Save Settings" button below does NOT save this.
+            </p>
+          )}
           <p className="text-[#64748B] text-xs leading-relaxed">
             Growing is always safe. Shrinking below a claimed number is blocked
             automatically.
           </p>
           {resizeError && (
-            <p className="text-[#EF476F] text-xs mt-2">{resizeError}</p>
+            <p className="text-[#EF476F] text-xs mt-2">⚠ {resizeError}</p>
           )}
           {resizeSaved && (
             <p className="text-[#22C55E] text-xs mt-2">

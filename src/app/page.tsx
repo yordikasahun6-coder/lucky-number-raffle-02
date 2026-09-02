@@ -9,6 +9,7 @@ export default async function Page() {
     { data: accounts },
     { data: settingsRows },
     { data: prizes },
+    { data: supportMembers },
   ] = await Promise.all([
     supabaseAdmin.from("site_assets").select("*"),
     supabaseAdmin
@@ -19,6 +20,11 @@ export default async function Page() {
     supabaseAdmin.from("app_settings").select("*").limit(1),
     supabaseAdmin
       .from("prizes")
+      .select("*")
+      .eq("active", true)
+      .order("display_order", { ascending: true }),
+    supabaseAdmin
+      .from("support_team_members")
       .select("*")
       .eq("active", true)
       .order("display_order", { ascending: true }),
@@ -46,6 +52,7 @@ export default async function Page() {
       prizes={prizes || []}
       botUsername={process.env.TELEGRAM_BOT_USERNAME || null}
       supportUsername={process.env.TELEGRAM_SUPPORT_USERNAME || null}
+      supportMembers={supportMembers || []}
     />
   );
 }

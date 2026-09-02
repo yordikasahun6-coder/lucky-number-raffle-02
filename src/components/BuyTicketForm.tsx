@@ -92,6 +92,26 @@ export default function BuyTicketForm({
   }
 
   if (submitted) {
+    const firstName = name.trim().split(" ")[0] || "there";
+
+    const nextSteps = [
+      {
+        icon: "💳",
+        title: t("nsStep1Title") || "Payment under review",
+        desc: t("nsStep1Desc") || "We verify it against your reference number",
+      },
+      {
+        icon: "📩",
+        title: t("nsStep2Title") || "You'll be notified",
+        desc: t("nsStep2Desc") || "By Telegram or by checking your status here",
+      },
+      {
+        icon: "🍀",
+        title: t("nsStep3Title") || "Pick your lucky number",
+        desc: t("nsStep3Desc") || "The moment you're approved",
+      },
+    ];
+
     return (
       <div className="text-center py-6 relative overflow-hidden">
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
@@ -126,12 +146,37 @@ export default function BuyTicketForm({
           </div>
 
           <div className="content-reveal" style={{ animationDelay: "0.5s" }}>
+            <p className="text-[#8A9A8F] text-xs uppercase tracking-wide font-semibold mb-1">
+              {(t("submittedGreeting") || "Dear {name}").replace(
+                "{name}",
+                firstName,
+              )}
+            </p>
             <p className="[font-family:var(--font-fraunces)] text-2xl font-bold text-[#111827] mb-1">
               {t("submittedTitle")}
             </p>
-            <p className="text-[#6B7280] text-sm max-w-xs mx-auto mb-6">
-              {t("submittedDesc")}
+            <p className="text-[#6B7280] text-sm max-w-sm mx-auto mb-6">
+              {t("submittedDescPremium") ||
+                "Your submission has been received safely and is now in queue for review. Here's exactly what happens from here."}
             </p>
+
+            <div className="rounded-2xl bg-[#F9FAFB] border border-[#E5E7EB] p-5 text-left max-w-sm mx-auto mb-6">
+              <div className="space-y-4">
+                {nextSteps.map((s, i) => (
+                  <div key={i} className="flex items-start gap-3">
+                    <span className="w-8 h-8 rounded-full bg-[#E7F5EC] flex items-center justify-center text-sm shrink-0">
+                      {s.icon}
+                    </span>
+                    <div>
+                      <p className="text-[#111827] text-sm font-semibold leading-tight">
+                        {s.title}
+                      </p>
+                      <p className="text-[#6B7280] text-xs mt-0.5">{s.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
 
             <div className="inline-flex items-center gap-2 rounded-full bg-[#F0FDF4] border border-[#BBF7D0] text-[#166534] text-xs font-semibold px-4 py-2 mb-6">
               📱{" "}
