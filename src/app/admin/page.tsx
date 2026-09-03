@@ -85,7 +85,7 @@ export default async function AdminPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
         <div className="rounded-2xl bg-[#29164F] border border-[#6D35D8]/40 px-5 py-5 flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-[#6D35D8] flex items-center justify-center text-white">
             📋

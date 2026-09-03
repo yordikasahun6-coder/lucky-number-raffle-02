@@ -114,7 +114,7 @@ export default function LedgerClient() {
       </div>
 
       {stats && (
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 mb-8">
           <div className="rounded-2xl bg-[#131C2B] border border-[#26344A] px-5 py-5 flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-[#29164F] flex items-center justify-center text-[#8B4DFF]">
               📋
