@@ -57,7 +57,7 @@ type AnalyticsData = {
 
 const PIE_COLORS = ["#7C3AED", "#3B82F6", "#D9A63A", "#64748B", "#EF476F"];
 
-function formatDate(d: string) {
+function formatDate(d: any) {
   return new Date(d).toLocaleDateString(undefined, {
     month: "short",
     day: "numeric",
