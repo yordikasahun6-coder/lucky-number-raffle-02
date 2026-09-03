@@ -312,8 +312,8 @@ export default function AnalyticsClient() {
                   fontSize: 12,
                 }}
                 labelFormatter={formatDate}
-                formatter={(v: number) => [
-                  `${currency} ${v.toLocaleString()}`,
+                formatter={(v: any) => [
+                  `${currency} ${Number(v).toLocaleString()}`,
                   "Collected",
                 ]}
               />
