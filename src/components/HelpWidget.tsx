@@ -18,6 +18,7 @@ const SUGGESTIONS = [
 export default function HelpWidget() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [shining, setShining] = useState(false);
   const [pos, setPos] = useState({ x: 24, y: 24 }); // distance from bottom-right
   const [dragging, setDragging] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
@@ -47,7 +48,14 @@ export default function HelpWidget() {
       .then(setKnowledge)
       .catch(() => {});
   }, []);
-
+  useEffect(() => {
+    if (open) return;
+    const interval = setInterval(() => {
+      setShining(true);
+      setTimeout(() => setShining(false), 1200);
+    }, 8000); // shines every 8 seconds while closed
+    return () => clearInterval(interval);
+  }, [open]);
   useEffect(() => {
     scrollRef.current?.scrollTo({
       top: scrollRef.current.scrollHeight,
@@ -119,16 +127,17 @@ export default function HelpWidget() {
       >
         <button
           onClick={() => !dragging && setOpen(!open)}
-          className={`press-scale w-14 h-14 rounded-full bg-[#0F5132] border-2 border-[#E0A72E] flex items-center justify-center shadow-xl shadow-black/30 cursor-grab active:cursor-grabbing ${!open ? "bubble-attention" : ""}`}
+          className="press-scale relative w-14 h-14 rounded-full bg-[#0F5132] border-2 border-[#E0A72E] flex items-center justify-center shadow-xl shadow-black/30 cursor-grab active:cursor-grabbing overflow-hidden"
         >
+          {shining && <span className="widget-shine-bar" />}
           {open ? (
-            <X size={26} className="text-[#E0A72E]" />
+            <X size={26} className="text-[#E0A72E] relative z-10" />
           ) : (
             <Icon
               icon="ix:support-ai"
               width="28"
               height="28"
-              className="text-[#E0A72E]"
+              className="text-[#E0A72E] relative z-10"
             />
           )}
         </button>
