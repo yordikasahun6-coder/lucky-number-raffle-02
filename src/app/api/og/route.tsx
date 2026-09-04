@@ -1,8 +1,6 @@
 import { ImageResponse } from "next/og";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
-export const runtime = "nodejs";
-
 export async function GET() {
   const { data: settings } = await supabaseAdmin
     .from("app_settings")
@@ -30,10 +28,10 @@ export async function GET() {
         alignItems: "center",
         justifyContent: "center",
         background: "linear-gradient(135deg, #FBF8EF 0%, #FFF3D6 100%)",
-        position: "relative",
       }}
     >
-      <div style={{ fontSize: 90, marginBottom: 10 }}>🎫</div>
+      <div style={{ display: "flex", fontSize: 90, marginBottom: 10 }}>🎫</div>
+
       <div
         style={{
           display: "flex",
@@ -45,9 +43,18 @@ export async function GET() {
         <span style={{ color: "#0F5132" }}>Lucky&nbsp;</span>
         <span style={{ color: "#E0A72E" }}>Ticket</span>
       </div>
-      <div style={{ fontSize: 34, color: "#4A5A50", marginBottom: 40 }}>
+
+      <div
+        style={{
+          display: "flex",
+          fontSize: 34,
+          color: "#4A5A50",
+          marginBottom: 40,
+        }}
+      >
         Your Next Win Could Be Yours
       </div>
+
       <div style={{ display: "flex", gap: 24 }}>
         <div
           style={{
@@ -60,11 +67,21 @@ export async function GET() {
             border: "2px solid #EAE1C4",
           }}
         >
-          <div style={{ fontSize: 20, color: "#8A9A8F" }}>Ticket Price</div>
-          <div style={{ fontSize: 40, fontWeight: 700, color: "#0F5132" }}>
+          <div style={{ display: "flex", fontSize: 20, color: "#8A9A8F" }}>
+            Ticket Price
+          </div>
+          <div
+            style={{
+              display: "flex",
+              fontSize: 40,
+              fontWeight: 700,
+              color: "#0F5132",
+            }}
+          >
             {price} {currency}
           </div>
         </div>
+
         {topPrize && (
           <div
             style={{
@@ -77,8 +94,17 @@ export async function GET() {
               border: "2px solid #EAE1C4",
             }}
           >
-            <div style={{ fontSize: 20, color: "#8A9A8F" }}>Grand Prize</div>
-            <div style={{ fontSize: 40, fontWeight: 700, color: "#E0A72E" }}>
+            <div style={{ display: "flex", fontSize: 20, color: "#8A9A8F" }}>
+              Grand Prize
+            </div>
+            <div
+              style={{
+                display: "flex",
+                fontSize: 40,
+                fontWeight: 700,
+                color: "#E0A72E",
+              }}
+            >
               {topPrize}
             </div>
           </div>
