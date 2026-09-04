@@ -21,7 +21,28 @@ const manrope = Manrope({
 });
 
 export const metadata: Metadata = {
-  title: "Lucky Ticket",
+  title: "Lucky Ticket — Your Next Win Could Be Yours",
+  description:
+    "Pick your lucky number, join the raffle, and see what happens. Simple, secure, and easy to join.",
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
+  ),
+  openGraph: {
+    title: "Lucky Ticket — Your Next Win Could Be Yours",
+    description:
+      "Pick your lucky number, join the raffle, and see what happens. Simple, secure, and easy to join.",
+    url: "/",
+    siteName: "Lucky Ticket",
+    images: [{ url: "/api/og", width: 1200, height: 630, alt: "Lucky Ticket" }],
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Lucky Ticket — Your Next Win Could Be Yours",
+    description:
+      "Pick your lucky number, join the raffle, and see what happens.",
+    images: ["/api/og"],
+  },
 };
 
 export default function RootLayout({
