@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Fraunces, JetBrains_Mono, Manrope } from "next/font/google";
 import { LanguageProvider } from "@/lib/i18n/LanguageContext";
 import "./globals.css";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 import HelpWidget from "@/components/HelpWidget";
 
 const fraunces = Fraunces({
@@ -20,30 +21,41 @@ const manrope = Manrope({
   weight: ["400", "500", "700"],
 });
 
-export const metadata: Metadata = {
-  title: "Lucky Ticket — Your Next Win Could Be Yours",
-  description:
-    "Pick your lucky number, join the raffle, and see what happens. Simple, secure, and easy to join.",
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
-  ),
-  openGraph: {
+export async function generateMetadata(): Promise<Metadata> {
+  const { data } = await supabaseAdmin
+    .from("site_assets")
+    .select("image_url")
+    .eq("key", "og_image")
+    .single();
+
+  // Falls back to the dynamic generated image if no custom one has been uploaded yet
+  const ogImage = data?.image_url || "/api/og";
+
+  return {
     title: "Lucky Ticket — Your Next Win Could Be Yours",
     description:
       "Pick your lucky number, join the raffle, and see what happens. Simple, secure, and easy to join.",
-    url: "/",
-    siteName: "Lucky Ticket",
-    images: [{ url: "/api/og", width: 1200, height: 630, alt: "Lucky Ticket" }],
-    type: "website",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Lucky Ticket — Your Next Win Could Be Yours",
-    description:
-      "Pick your lucky number, join the raffle, and see what happens.",
-    images: ["/api/og"],
-  },
-};
+    metadataBase: new URL(
+      process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
+    ),
+    openGraph: {
+      title: "Lucky Ticket — Your Next Win Could Be Yours",
+      description:
+        "Pick your lucky number, join the raffle, and see what happens. Simple, secure, and easy to join.",
+      url: "/",
+      siteName: "Lucky Ticket",
+      images: [{ url: ogImage, width: 1200, height: 630, alt: "Lucky Ticket" }],
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: "Lucky Ticket — Your Next Win Could Be Yours",
+      description:
+        "Pick your lucky number, join the raffle, and see what happens.",
+      images: [ogImage],
+    },
+  };
+}
 
 export default function RootLayout({
   children,
