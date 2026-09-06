@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { notifyAdminTelegram } from "@/lib/telegram";
+import { checkRateLimit } from "@/lib/rateLimiter";
 
 async function sendBotMessage(
   chatId: number,
@@ -80,17 +81,15 @@ export async function POST(request: NextRequest) {
           chatId,
           "I don't have your details on file yet. Let's start fresh — what's your full name?",
         );
-        await supabaseAdmin
-          .from("telegram_sessions")
-          .upsert({
-            chat_id: chatId,
-            step: "name",
-            name: null,
-            phone: null,
-            method_id: null,
-            method_name: null,
-            updated_at: new Date().toISOString(),
-          });
+        await supabaseAdmin.from("telegram_sessions").upsert({
+          chat_id: chatId,
+          step: "name",
+          name: null,
+          phone: null,
+          method_id: null,
+          method_name: null,
+          updated_at: new Date().toISOString(),
+        });
         return NextResponse.json({ ok: true });
       }
 
@@ -272,6 +271,17 @@ export async function POST(request: NextRequest) {
       await sendBotMessage(
         chatId,
         "Please send a photo of your payment screenshot to finish.",
+      );
+      return NextResponse.json({ ok: true });
+    }
+
+    const phoneCheck = await checkRateLimit(`phone:${session.phone}`);
+    const chatCheck = await checkRateLimit(`telegram-chat:${chatId}`);
+
+    if (!phoneCheck.allowed || !chatCheck.allowed) {
+      await sendBotMessage(
+        chatId,
+        "⚠️ Too many submissions in a short time. Please wait a few minutes and try again.",
       );
       return NextResponse.json({ ok: true });
     }
