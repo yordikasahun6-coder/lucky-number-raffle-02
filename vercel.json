@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/remind-unclaimed",
+      "schedule": "0 12 * * *"
+    }
+  ]
+}
