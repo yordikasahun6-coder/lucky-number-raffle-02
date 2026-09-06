@@ -8,7 +8,11 @@ import ConfettiBurst from "./ConfettiBurst";
 import TicketsCompleteScreen from "./TicketsCompleteScreen";
 import RandomPickPanel from "./RandomPickPanel";
 
-const PER_PAGE = 100;
+function getPerPage(max: number) {
+  if (max <= 100) return max;
+  if (max <= 500) return 50;
+  return 100;
+}
 
 export default function PickNumberClient({
   assets,
@@ -153,15 +157,18 @@ export default function PickNumberClient({
   }
 
   const searchedNumber = search.trim() ? parseInt(search.trim(), 10) : null;
+  const perPage = useMemo(() => getPerPage(maxNumber), [maxNumber]);
+
   const pageNumbers = useMemo(() => {
     if (searchedNumber && searchedNumber >= 1 && searchedNumber <= maxNumber) {
       return [searchedNumber];
     }
-    const start = (page - 1) * PER_PAGE + 1;
-    return Array.from({ length: PER_PAGE }, (_, i) => start + i);
-  }, [page, searchedNumber]);
+    const start = (page - 1) * perPage + 1;
+    const end = Math.min(start + perPage - 1, maxNumber);
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+  }, [page, searchedNumber, perPage, maxNumber]);
 
-  const totalPages = Math.ceil(maxNumber / PER_PAGE);
+  const totalPages = Math.ceil(maxNumber / perPage);
 
   // ===== Finished all their tickets — show the celebration screen =====
   // This check must come before the "!approved" check below, because
