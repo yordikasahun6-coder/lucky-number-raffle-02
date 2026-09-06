@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { notifyAdminTelegram } from "@/lib/telegram";
+import { checkRateLimit } from "@/lib/rateLimiter";
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,6 +23,23 @@ export async function POST(request: NextRequest) {
     const customer_name = formData.get("customer_name") as string;
     const payment_account_id = formData.get("payment_account_id") as string;
     const screenshot = formData.get("screenshot") as File | null;
+
+    const ip =
+      request.headers.get("x-forwarded-for")?.split(",")[0].trim() || "unknown";
+    const phoneCheck = await checkRateLimit(
+      `phone:${phone_number.replace(/[^0-9]/g, "")}`,
+    );
+    const ipCheck = await checkRateLimit(`ip:${ip}`);
+
+    if (!phoneCheck.allowed || !ipCheck.allowed) {
+      return NextResponse.json(
+        {
+          error:
+            "Too many submissions in a short time. Please wait a few minutes and try again.",
+        },
+        { status: 429 },
+      );
+    }
 
     if (!phone_number || !customer_name || !payment_account_id) {
       return NextResponse.json(

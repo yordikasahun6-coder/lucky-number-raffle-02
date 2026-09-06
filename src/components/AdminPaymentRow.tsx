@@ -35,6 +35,7 @@ export default function AdminPaymentRow({ payment }: { payment: Payment }) {
   const [error, setError] = useState("");
   const [ticketCount, setTicketCount] = useState(1);
   const [safeMax, setSafeMax] = useState<number | null>(null);
+  const [rejectionCount, setRejectionCount] = useState(0);
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -43,6 +44,14 @@ export default function AdminPaymentRow({ payment }: { payment: Payment }) {
       .then((data) => setSafeMax(data.safeMax))
       .catch(() => setSafeMax(null));
   }, []);
+  useEffect(() => {
+    fetch(
+      `/api/admin/rejection-history?phone=${encodeURIComponent(payment.phone_number)}`,
+    )
+      .then((res) => res.json())
+      .then((data) => setRejectionCount(data.rejectionCount || 0))
+      .catch(() => {});
+  }, [payment.phone_number]);
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -166,9 +175,16 @@ export default function AdminPaymentRow({ payment }: { payment: Payment }) {
       <div className="flex-1 p-6">
         <div className="flex justify-between items-start mb-4">
           <div>
-            <p className="text-[#F5F7FA] font-bold text-lg">
-              {payment.customer_name}
-            </p>
+            <div className="flex items-center gap-2 flex-wrap">
+              <p className="text-[#F5F7FA] font-bold text-lg">
+                {payment.customer_name}
+              </p>
+              {rejectionCount >= 3 && (
+                <span className="rounded-full bg-[#351722] border border-[#EF476F]/40 text-[#EF476F] text-[10px] font-bold px-2.5 py-1">
+                  ⚠ Rejected {rejectionCount}x before
+                </span>
+              )}
+            </div>
             <p className="[font-family:var(--font-mono)] text-sm text-[#9AA7BC] mt-1">
               {payment.phone_number} <span className="text-[#64748B]">•</span>{" "}
               <span className="text-[#D9A63A] uppercase">{payment.method}</span>
