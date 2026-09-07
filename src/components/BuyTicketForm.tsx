@@ -27,13 +27,10 @@ export default function BuyTicketForm({
   const selectedAccount = accounts.find((a) => a.id === accountId);
 
   function buildTelegramLink(): string {
-    const methodText = selectedAccount ? selectedAccount.name : "_____";
-    const nameText = name.trim() || "_____";
-    const phoneText = phone.trim() || "_____";
-
-    const template = `Name: ${nameText}\nPhone: ${phoneText}\nPayment method: ${methodText}\n\n[Attach your payment screenshot below]`;
-
-    return `https://t.me/${botUsername}?text=${encodeURIComponent(template)}`;
+    // No pre-filled text needed — the bot guides them through name,
+    // phone, payment method, and screenshot step by step once they
+    // tap Start, so there's nothing useful to pre-load into the box.
+    return `https://t.me/${botUsername}`;
   }
 
   function resetForNewSubmission() {

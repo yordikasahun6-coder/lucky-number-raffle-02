@@ -42,15 +42,17 @@ async function answerCallback(callbackQueryId: string) {
 }
 
 async function startSession(chatId: number) {
-  await supabaseAdmin.from("telegram_sessions").upsert({
-    chat_id: chatId,
-    step: "name",
-    name: null,
-    phone: null,
-    method_id: null,
-    method_name: null,
-    updated_at: new Date().toISOString(),
-  });
+  await supabaseAdmin
+    .from("telegram_sessions")
+    .upsert({
+      chat_id: chatId,
+      step: "name",
+      name: null,
+      phone: null,
+      method_id: null,
+      method_name: null,
+      updated_at: new Date().toISOString(),
+    });
   await sendBotMessage(
     chatId,
     "👋 Let's get your ticket submitted!\n\nFirst — what's your full name?",
@@ -177,7 +179,10 @@ export async function POST(request: NextRequest) {
   const text: string = message.text || "";
   const photo = message.photo;
 
-  if (text.trim() === "/start") {
+  // First-time users tapping "Start" only send /start — Telegram drops
+  // any pre-filled text for brand-new conversations. Give them clear
+  // instructions instead of silently doing nothing.
+  if (text.trim() === "/start" || text.trim() === "") {
     await startSession(chatId);
     return NextResponse.json({ ok: true });
   }
@@ -190,6 +195,26 @@ export async function POST(request: NextRequest) {
 
   if (!session) {
     await startSession(chatId);
+    return NextResponse.json({ ok: true });
+  }
+
+  if (session.step === "name") {
+    if (!text.trim()) {
+      await sendBotMessage(chatId, "Please type your full name as text.");
+      return NextResponse.json({ ok: true });
+    }
+    await supabaseAdmin
+      .from("telegram_sessions")
+      .update({
+        name: text.trim(),
+        step: "phone",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("chat_id", chatId);
+    await sendBotMessage(
+      chatId,
+      `Thanks, ${text.trim()}!\n\nNow, what's your phone number? (e.g. 0912345678)`,
+    );
     return NextResponse.json({ ok: true });
   }
 
