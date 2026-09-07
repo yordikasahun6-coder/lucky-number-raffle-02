@@ -21,6 +21,7 @@ export async function PATCH(request: NextRequest) {
     closes_at,
     prize_disclaimer,
     telegram_username,
+    terms_content,
   } = body;
 
   if (
@@ -42,6 +43,7 @@ export async function PATCH(request: NextRequest) {
       closes_at: closes_at || null,
       prize_disclaimer: prize_disclaimer || null,
       telegram_username: telegram_username || null,
+      terms_content: terms_content || null,
     })
     .eq("id", true);
 

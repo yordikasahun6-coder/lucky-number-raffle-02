@@ -9,6 +9,7 @@ type Settings = {
   prize_disclaimer: string | null;
   telegram_username: string | null;
   max_number: number;
+  terms_content: string | null;
 };
 
 export default function SettingsManager({
@@ -23,6 +24,9 @@ export default function SettingsManager({
   );
   const [disclaimer, setDisclaimer] = useState(
     initialSettings?.prize_disclaimer ?? "",
+  );
+  const [termsContent, setTermsContent] = useState(
+    initialSettings?.terms_content ?? "",
   );
   const [telegramUsername, setTelegramUsername] = useState(
     initialSettings?.telegram_username ?? "",
@@ -56,6 +60,7 @@ export default function SettingsManager({
         closes_at: closesAt ? new Date(closesAt).toISOString() : null,
         prize_disclaimer: disclaimer.trim() || null,
         telegram_username: telegramUsername.trim().replace(/^@/, "") || null,
+        terms_content: termsContent.trim() || null,
       }),
     });
     const result = await res.json();
@@ -280,6 +285,29 @@ export default function SettingsManager({
           <p className="text-[#64748B] text-xs mt-2">
             Leave empty to hide it entirely.
           </p>
+        </div>
+        {/* Terms & Privacy card — full width */}
+        <div className="lg:col-span-2 rounded-2xl bg-[#131C2B] border border-[#26344A] p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <span className="w-10 h-10 rounded-xl bg-[#29164F] flex items-center justify-center text-[#8B4DFF]">
+              📜
+            </span>
+            <div>
+              <p className="text-[#F5F7FA] font-semibold">
+                Terms & Privacy page
+              </p>
+              <p className="text-[#64748B] text-xs">
+                Shown at /terms — leave empty to use the default text
+              </p>
+            </div>
+          </div>
+          <textarea
+            value={termsContent}
+            onChange={(e) => setTermsContent(e.target.value)}
+            rows={10}
+            placeholder="Leave empty to use our sensible default terms, or write your own here."
+            className="w-full rounded-xl bg-[#080D16] border border-[#26344A] px-4 py-3 [font-family:var(--font-mono)] text-[#F5F7FA] text-xs leading-relaxed placeholder-[#64748B] focus:outline-none focus:border-[#6D35D8]"
+          />
         </div>
       </div>
 

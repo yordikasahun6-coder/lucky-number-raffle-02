@@ -450,6 +450,14 @@ export default function HomePage({
           </p>
         </div>
         {/* ===== END POWERED BY kODEXA FOOTER ===== */}
+        <div className="text-center mt-8 pt-6 border-t border-white/10">
+          <a
+            href="/terms"
+            className="text-[#B8D4C4] text-xs hover:text-white transition-colors"
+          >
+            Terms & Privacy
+          </a>
+        </div>
       </footer>
     </main>
   );
