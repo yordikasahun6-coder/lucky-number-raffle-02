@@ -264,32 +264,47 @@ export default function PickNumberClient({
       </div>
 
       <div className="max-w-2xl mx-auto relative z-10">
-        <div className="flex items-center justify-between mb-6 number-pop">
-          <a
-            href="/"
-            className="press-scale w-9 h-9 rounded-full border border-[#EAE1C4] flex items-center justify-center text-[#8A9A8F] hover:border-[#0F5132] hover:text-[#0F5132] transition-colors"
-          >
-            ‹
-          </a>
-          <div className="flex items-center gap-2">
-            {assets.logo && (
-              <img
-                src={assets.logo}
-                alt=""
-                className="h-7 w-7 object-contain"
-              />
-            )}
-            <span className="[font-family:var(--font-fraunces)] font-bold text-lg">
-              <span className="text-[#0F5132]">Lucky</span>{" "}
-              <span className="text-[#E0A72E]">Ticket</span>
-            </span>
+        <div className="mb-6 number-pop">
+          <div className="flex items-center justify-between gap-2">
+            <a
+              href="/"
+              className="press-scale w-9 h-9 shrink-0 rounded-full border border-[#EAE1C4] flex items-center justify-center text-[#8A9A8F] hover:border-[#0F5132] hover:text-[#0F5132] transition-colors"
+            >
+              ‹
+            </a>
+
+            <div className="flex items-center gap-1.5 min-w-0">
+              {assets.logo && (
+                <img
+                  src={assets.logo}
+                  alt=""
+                  className="h-6 w-6 sm:h-7 sm:w-7 object-contain shrink-0"
+                />
+              )}
+              <span className="[font-family:var(--font-fraunces)] font-bold text-base sm:text-lg whitespace-nowrap">
+                <span className="text-[#0F5132]">Lucky</span>{" "}
+                <span className="text-[#E0A72E]">Ticket</span>
+              </span>
+            </div>
+
+            <div className="hidden sm:block shrink-0">
+              <LanguageToggle />
+            </div>
           </div>
-          <div className="flex items-center gap-2">
+
+          <div className="flex items-center justify-between gap-2 mt-3 sm:hidden">
             <div className="pulse-ring rounded-full bg-[#E7F5EC] text-[#0F5132] text-xs font-semibold px-3 py-1.5 flex items-center gap-1.5">
               ✓ {availableCredits} {t("ticketsAvailable")}
               {availableCredits !== 1 ? "s" : ""}
             </div>
             <LanguageToggle />
+          </div>
+
+          <div className="hidden sm:flex justify-end mt-2">
+            <div className="pulse-ring rounded-full bg-[#E7F5EC] text-[#0F5132] text-xs font-semibold px-3 py-1.5 items-center gap-1.5 inline-flex">
+              ✓ {availableCredits} {t("ticketsAvailable")}
+              {availableCredits !== 1 ? "s" : ""}
+            </div>
           </div>
         </div>
 
