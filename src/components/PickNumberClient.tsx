@@ -13,6 +13,21 @@ function getPerPage(max: number) {
   if (max <= 500) return 50;
   return 100;
 }
+function getPageWindow(current: number, total: number): (number | string)[] {
+  const delta = 1; // how many pages to show on each side of current
+  const range: (number | string)[] = [];
+
+  const start = Math.max(2, current - delta);
+  const end = Math.min(total - 1, current + delta);
+
+  range.push(1);
+  if (start > 2) range.push("...");
+  for (let i = start; i <= end; i++) range.push(i);
+  if (end < total - 1) range.push("...");
+  if (total > 1) range.push(total);
+
+  return range;
+}
 
 export default function PickNumberClient({
   assets,
@@ -481,34 +496,57 @@ export default function PickNumberClient({
                 </div>
               )}
 
-              {!searchedNumber && (
-                <div className="flex items-center justify-center gap-1.5 mt-4 text-xs">
+              {!searchedNumber && totalPages > 1 && (
+                <div className="flex items-center justify-center gap-2 mt-4">
                   <button
                     onClick={() => setPage(Math.max(1, page - 1))}
                     disabled={page === 1}
-                    className="press-scale w-7 h-7 rounded border border-[#EAE1C4] text-[#8A9A8F] disabled:opacity-30 hover:border-[#0F5132] transition-colors"
+                    className="press-scale w-8 h-8 shrink-0 rounded-lg border border-[#EAE1C4] text-[#8A9A8F] text-sm disabled:opacity-30 hover:border-[#0F5132] transition-colors"
                   >
                     ‹
                   </button>
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                    (p) => (
-                      <button
-                        key={p}
-                        onClick={() => setPage(p)}
-                        className={`press-scale w-7 h-7 rounded transition-colors ${p === page ? "bg-[#0F5132] text-white" : "text-[#6B8A78] hover:bg-[#E7F5EC]"}`}
-                      >
-                        {p}
-                      </button>
-                    ),
-                  )}
+
+                  <div className="flex-1 max-w-xs overflow-x-auto no-scrollbar">
+                    <div className="flex items-center gap-1.5 justify-center min-w-max px-1">
+                      {getPageWindow(page, totalPages).map((p, i) =>
+                        p === "..." ? (
+                          <span
+                            key={`dots-${i}`}
+                            className="w-8 text-center text-[#B4C0B8] text-xs"
+                          >
+                            ⋯
+                          </span>
+                        ) : (
+                          <button
+                            key={p}
+                            onClick={() => setPage(p as number)}
+                            className={`press-scale w-8 h-8 shrink-0 rounded-lg text-xs [font-family:var(--font-mono)] transition-colors ${
+                              p === page
+                                ? "bg-[#0F5132] text-white font-bold"
+                                : "text-[#6B8A78] hover:bg-[#E7F5EC]"
+                            }`}
+                          >
+                            {p}
+                          </button>
+                        ),
+                      )}
+                    </div>
+                  </div>
+
                   <button
                     onClick={() => setPage(Math.min(totalPages, page + 1))}
                     disabled={page === totalPages}
-                    className="press-scale w-7 h-7 rounded border border-[#EAE1C4] text-[#8A9A8F] disabled:opacity-30 hover:border-[#0F5132] transition-colors"
+                    className="press-scale w-8 h-8 shrink-0 rounded-lg border border-[#EAE1C4] text-[#8A9A8F] text-sm disabled:opacity-30 hover:border-[#0F5132] transition-colors"
                   >
                     ›
                   </button>
                 </div>
+              )}
+
+              {!searchedNumber && totalPages > 1 && (
+                <p className="text-center text-[#8A9A8F] text-[11px] mt-2">
+                  Page {page} of {totalPages}
+                </p>
               )}
             </div>
 
