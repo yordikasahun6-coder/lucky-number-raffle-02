@@ -42,17 +42,15 @@ async function answerCallback(callbackQueryId: string) {
 }
 
 async function startSession(chatId: number) {
-  await supabaseAdmin
-    .from("telegram_sessions")
-    .upsert({
-      chat_id: chatId,
-      step: "name",
-      name: null,
-      phone: null,
-      method_id: null,
-      method_name: null,
-      updated_at: new Date().toISOString(),
-    });
+  await supabaseAdmin.from("telegram_sessions").upsert({
+    chat_id: chatId,
+    step: "name",
+    name: null,
+    phone: null,
+    method_id: null,
+    method_name: null,
+    updated_at: new Date().toISOString(),
+  });
   await sendBotMessage(
     chatId,
     "👋 Let's get your ticket submitted!\n\nFirst — what's your full name?",
@@ -179,10 +177,10 @@ export async function POST(request: NextRequest) {
   const text: string = message.text || "";
   const photo = message.photo;
 
-  // First-time users tapping "Start" only send /start — Telegram drops
-  // any pre-filled text for brand-new conversations. Give them clear
-  // instructions instead of silently doing nothing.
-  if (text.trim() === "/start" || text.trim() === "") {
+  // Only a real /start command should reset the session. A photo
+  // message has no text at all — it must NOT be treated the same as
+  // /start, or every screenshot upload would wrongly restart the flow.
+  if (text.trim() === "/start") {
     await startSession(chatId);
     return NextResponse.json({ ok: true });
   }
