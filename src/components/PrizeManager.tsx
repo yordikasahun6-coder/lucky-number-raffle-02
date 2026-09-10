@@ -171,7 +171,7 @@ export default function PrizeManager({
         {prizes.map((p, i) => (
           <div
             key={p.id}
-            className="rounded-2xl bg-[#131C2B] border border-[#26344A] px-5 py-4 flex items-center gap-4"
+            className="rounded-2xl bg-[#131C2B] border border-[#26344A] p-4 flex flex-wrap items-center gap-3"
           >
             {p.image_url ? (
               <img
@@ -185,54 +185,56 @@ export default function PrizeManager({
               </div>
             )}
 
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 min-w-[140px]">
               <p className="text-[#F5F7FA] font-semibold truncate">{p.title}</p>
               <p className="[font-family:var(--font-mono)] text-sm text-[#D9A63A] font-bold">
                 {p.amount}
               </p>
             </div>
 
-            <div className="flex flex-col gap-1 shrink-0">
+            <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+              <div className="flex flex-col gap-1 shrink-0">
+                <button
+                  onClick={() => move(p.id, "up")}
+                  disabled={i === 0}
+                  className="w-6 h-6 rounded bg-[#172133] text-[#9AA7BC] text-xs disabled:opacity-20 hover:text-[#8B4DFF] transition-colors"
+                >
+                  ▲
+                </button>
+                <button
+                  onClick={() => move(p.id, "down")}
+                  disabled={i === prizes.length - 1}
+                  className="w-6 h-6 rounded bg-[#172133] text-[#9AA7BC] text-xs disabled:opacity-20 hover:text-[#8B4DFF] transition-colors"
+                >
+                  ▼
+                </button>
+              </div>
+
               <button
-                onClick={() => move(p.id, "up")}
-                disabled={i === 0}
-                className="w-6 h-6 rounded bg-[#172133] text-[#9AA7BC] text-xs disabled:opacity-20 hover:text-[#8B4DFF] transition-colors"
+                onClick={() => toggleActive(p.id, p.active)}
+                className={`shrink-0 flex items-center gap-1.5 rounded-full text-xs font-semibold px-3.5 py-1.5 transition-colors ${
+                  p.active
+                    ? "bg-[#123522] border border-[#22C55E]/40 text-[#22C55E]"
+                    : "bg-[#172133] border border-[#26344A] text-[#64748B]"
+                }`}
               >
-                ▲
+                <span className="w-1.5 h-1.5 rounded-full bg-current" />{" "}
+                {p.active ? "Active" : "Hidden"}
+              </button>
+
+              <button
+                onClick={() => startEdit(p)}
+                className="shrink-0 w-9 h-9 rounded-lg bg-[#172133] border border-[#26344A] flex items-center justify-center text-[#9AA7BC] hover:border-[#6D35D8] hover:text-[#8B4DFF] transition-colors"
+              >
+                ✏️
               </button>
               <button
-                onClick={() => move(p.id, "down")}
-                disabled={i === prizes.length - 1}
-                className="w-6 h-6 rounded bg-[#172133] text-[#9AA7BC] text-xs disabled:opacity-20 hover:text-[#8B4DFF] transition-colors"
+                onClick={() => remove(p.id)}
+                className="shrink-0 w-9 h-9 rounded-lg bg-[#351722] border border-[#EF476F]/30 flex items-center justify-center text-[#EF476F] hover:bg-[#EF476F] hover:text-white transition-colors"
               >
-                ▼
+                🗑
               </button>
             </div>
-
-            <button
-              onClick={() => toggleActive(p.id, p.active)}
-              className={`shrink-0 flex items-center gap-1.5 rounded-full text-xs font-semibold px-3.5 py-1.5 transition-colors ${
-                p.active
-                  ? "bg-[#123522] border border-[#22C55E]/40 text-[#22C55E]"
-                  : "bg-[#172133] border border-[#26344A] text-[#64748B]"
-              }`}
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-current" />{" "}
-              {p.active ? "Active" : "Hidden"}
-            </button>
-
-            <button
-              onClick={() => startEdit(p)}
-              className="shrink-0 w-9 h-9 rounded-lg bg-[#172133] border border-[#26344A] flex items-center justify-center text-[#9AA7BC] hover:border-[#6D35D8] hover:text-[#8B4DFF] transition-colors"
-            >
-              ✏️
-            </button>
-            <button
-              onClick={() => remove(p.id)}
-              className="shrink-0 w-9 h-9 rounded-lg bg-[#351722] border border-[#EF476F]/30 flex items-center justify-center text-[#EF476F] hover:bg-[#EF476F] hover:text-white transition-colors"
-            >
-              🗑
-            </button>
           </div>
         ))}
         {prizes.length === 0 && (

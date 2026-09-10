@@ -197,7 +197,7 @@ export default function SupportManager({
         {members.map((m, i) => (
           <div
             key={m.id}
-            className="rounded-2xl bg-[#131C2B] border border-[#26344A] px-5 py-4 flex items-center gap-4"
+            className="rounded-2xl bg-[#131C2B] border border-[#26344A] p-4 flex flex-wrap items-center gap-3"
           >
             {m.avatar_url ? (
               <img
@@ -211,7 +211,7 @@ export default function SupportManager({
               </div>
             )}
 
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 min-w-[160px]">
               <p className="text-[#F5F7FA] font-semibold truncate">{m.name}</p>
               <p className="text-[#9AA7BC] text-xs truncate">
                 {channelCount(m)} channel{channelCount(m) !== 1 ? "s" : ""}{" "}
@@ -219,47 +219,49 @@ export default function SupportManager({
               </p>
             </div>
 
-            <div className="flex flex-col gap-1 shrink-0">
+            <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+              <div className="flex flex-col gap-1 shrink-0">
+                <button
+                  onClick={() => move(m.id, "up")}
+                  disabled={i === 0}
+                  className="w-6 h-6 rounded bg-[#172133] text-[#9AA7BC] text-xs disabled:opacity-20 hover:text-[#8B4DFF] transition-colors"
+                >
+                  ▲
+                </button>
+                <button
+                  onClick={() => move(m.id, "down")}
+                  disabled={i === members.length - 1}
+                  className="w-6 h-6 rounded bg-[#172133] text-[#9AA7BC] text-xs disabled:opacity-20 hover:text-[#8B4DFF] transition-colors"
+                >
+                  ▼
+                </button>
+              </div>
+
               <button
-                onClick={() => move(m.id, "up")}
-                disabled={i === 0}
-                className="w-6 h-6 rounded bg-[#172133] text-[#9AA7BC] text-xs disabled:opacity-20 hover:text-[#8B4DFF] transition-colors"
+                onClick={() => toggleActive(m.id, m.active)}
+                className={`shrink-0 flex items-center gap-1.5 rounded-full text-xs font-semibold px-3.5 py-1.5 transition-colors ${
+                  m.active
+                    ? "bg-[#123522] border border-[#22C55E]/40 text-[#22C55E]"
+                    : "bg-[#172133] border border-[#26344A] text-[#64748B]"
+                }`}
               >
-                ▲
+                <span className="w-1.5 h-1.5 rounded-full bg-current" />{" "}
+                {m.active ? "Active" : "Hidden"}
+              </button>
+
+              <button
+                onClick={() => startEdit(m)}
+                className="shrink-0 w-9 h-9 rounded-lg bg-[#172133] border border-[#26344A] flex items-center justify-center text-[#9AA7BC] hover:border-[#6D35D8] hover:text-[#8B4DFF] transition-colors"
+              >
+                ✏️
               </button>
               <button
-                onClick={() => move(m.id, "down")}
-                disabled={i === members.length - 1}
-                className="w-6 h-6 rounded bg-[#172133] text-[#9AA7BC] text-xs disabled:opacity-20 hover:text-[#8B4DFF] transition-colors"
+                onClick={() => remove(m.id)}
+                className="shrink-0 w-9 h-9 rounded-lg bg-[#351722] border border-[#EF476F]/30 flex items-center justify-center text-[#EF476F] hover:bg-[#EF476F] hover:text-white transition-colors"
               >
-                ▼
+                🗑
               </button>
             </div>
-
-            <button
-              onClick={() => toggleActive(m.id, m.active)}
-              className={`shrink-0 flex items-center gap-1.5 rounded-full text-xs font-semibold px-3.5 py-1.5 transition-colors ${
-                m.active
-                  ? "bg-[#123522] border border-[#22C55E]/40 text-[#22C55E]"
-                  : "bg-[#172133] border border-[#26344A] text-[#64748B]"
-              }`}
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-current" />{" "}
-              {m.active ? "Active" : "Hidden"}
-            </button>
-
-            <button
-              onClick={() => startEdit(m)}
-              className="shrink-0 w-9 h-9 rounded-lg bg-[#172133] border border-[#26344A] flex items-center justify-center text-[#9AA7BC] hover:border-[#6D35D8] hover:text-[#8B4DFF] transition-colors"
-            >
-              ✏️
-            </button>
-            <button
-              onClick={() => remove(m.id)}
-              className="shrink-0 w-9 h-9 rounded-lg bg-[#351722] border border-[#EF476F]/30 flex items-center justify-center text-[#EF476F] hover:bg-[#EF476F] hover:text-white transition-colors"
-            >
-              🗑
-            </button>
           </div>
         ))}
         {members.length === 0 && (

@@ -161,9 +161,9 @@ export default function AccountManager({
         {accounts.map((a) => (
           <div
             key={a.id}
-            className="rounded-2xl bg-[#131C2B] border border-[#26344A] px-5 py-4 flex items-center gap-4"
+            className="rounded-2xl bg-[#131C2B] border border-[#26344A] p-4 flex flex-wrap items-center gap-3"
           >
-            <span className="text-[#64748B] cursor-grab select-none text-sm tracking-widest">
+            <span className="hidden sm:inline text-[#64748B] cursor-grab select-none text-sm tracking-widest">
               ⠿⠿⠿
             </span>
 
@@ -177,7 +177,7 @@ export default function AccountManager({
               <div className="w-11 h-11 rounded-xl bg-[#172133] shrink-0" />
             )}
 
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 min-w-[160px]">
               <p className="text-[#F5F7FA] font-semibold truncate">{a.name}</p>
               <p className="[font-family:var(--font-mono)] text-xs text-[#9AA7BC]">
                 {a.account_holder} <span className="text-[#64748B]">•</span>{" "}
@@ -190,30 +190,31 @@ export default function AccountManager({
               )}
             </div>
 
-            <button
-              onClick={() => toggleActive(a.id, a.active)}
-              className={`shrink-0 flex items-center gap-1.5 rounded-full text-xs font-semibold px-3.5 py-1.5 transition-colors ${
-                a.active
-                  ? "bg-[#123522] border border-[#22C55E]/40 text-[#22C55E]"
-                  : "bg-[#172133] border border-[#26344A] text-[#64748B]"
-              }`}
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-current" />{" "}
-              {a.active ? "Active" : "Hidden"}
-            </button>
-
-            <button
-              onClick={() => startEdit(a)}
-              className="shrink-0 w-9 h-9 rounded-lg bg-[#172133] border border-[#26344A] flex items-center justify-center text-[#9AA7BC] hover:border-[#6D35D8] hover:text-[#8B4DFF] transition-colors"
-            >
-              ✏️
-            </button>
-            <button
-              onClick={() => remove(a.id)}
-              className="shrink-0 w-9 h-9 rounded-lg bg-[#351722] border border-[#EF476F]/30 flex items-center justify-center text-[#EF476F] hover:bg-[#EF476F] hover:text-white transition-colors"
-            >
-              🗑
-            </button>
+            <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+              <button
+                onClick={() => toggleActive(a.id, a.active)}
+                className={`shrink-0 flex items-center gap-1.5 rounded-full text-xs font-semibold px-3.5 py-1.5 transition-colors ${
+                  a.active
+                    ? "bg-[#123522] border border-[#22C55E]/40 text-[#22C55E]"
+                    : "bg-[#172133] border border-[#26344A] text-[#64748B]"
+                }`}
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-current" />{" "}
+                {a.active ? "Active" : "Hidden"}
+              </button>
+              <button
+                onClick={() => startEdit(a)}
+                className="shrink-0 w-9 h-9 rounded-lg bg-[#172133] border border-[#26344A] flex items-center justify-center text-[#9AA7BC] hover:border-[#6D35D8] hover:text-[#8B4DFF] transition-colors"
+              >
+                ✏️
+              </button>
+              <button
+                onClick={() => remove(a.id)}
+                className="shrink-0 w-9 h-9 rounded-lg bg-[#351722] border border-[#EF476F]/30 flex items-center justify-center text-[#EF476F] hover:bg-[#EF476F] hover:text-white transition-colors"
+              >
+                🗑
+              </button>
+            </div>
           </div>
         ))}
         {accounts.length === 0 && (
