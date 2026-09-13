@@ -25,24 +25,7 @@ type Stats = {
   totalUnclaimed: number;
   uniqueUnclaimedCustomers: number;
 };
-function handleExport() {
-  const rows = payments.map((p) => ({
-    "Customer Name": p.customer_name,
-    "Phone Number": p.phone_number,
-    "Payment Method": p.method,
-    "Reference Number": p.reference_number || "",
-    "Total Tickets": p.ticket_count,
-    Claimed: p.claimedCount,
-    Unclaimed: p.unclaimedCount,
-    Refunded: p.refunded_count,
-    "Claimed Numbers": p.claimedNumbers.map((n) => `#${n}`).join(" "),
-    "Submitted At": new Date(p.submitted_at).toLocaleString(),
-  }));
-  downloadCsv(
-    `customer-ledger-${new Date().toISOString().slice(0, 10)}.csv`,
-    rows,
-  );
-}
+
 export default function LedgerClient() {
   const [view, setView] = useState<"search" | "unclaimed">("search");
   const [phone, setPhone] = useState("");
@@ -113,6 +96,24 @@ export default function LedgerClient() {
     else await handleSearch({ preventDefault: () => {} } as React.FormEvent);
     await loadStats();
     setRefunding(null);
+  }
+  function handleExport() {
+    const rows = payments.map((p) => ({
+      "Customer Name": p.customer_name,
+      "Phone Number": p.phone_number,
+      "Payment Method": p.method,
+      "Reference Number": p.reference_number || "",
+      "Total Tickets": p.ticket_count,
+      Claimed: p.claimedCount,
+      Unclaimed: p.unclaimedCount,
+      Refunded: p.refunded_count,
+      "Claimed Numbers": p.claimedNumbers.map((n) => `#${n}`).join(" "),
+      "Submitted At": new Date(p.submitted_at).toLocaleString(),
+    }));
+    downloadCsv(
+      `customer-ledger-${new Date().toISOString().slice(0, 10)}.csv`,
+      rows,
+    );
   }
 
   return (
