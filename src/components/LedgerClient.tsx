@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { downloadCsv } from "@/lib/exportCsv";
 
 type Payment = {
   id: string;
@@ -24,7 +25,24 @@ type Stats = {
   totalUnclaimed: number;
   uniqueUnclaimedCustomers: number;
 };
-
+function handleExport() {
+  const rows = payments.map((p) => ({
+    "Customer Name": p.customer_name,
+    "Phone Number": p.phone_number,
+    "Payment Method": p.method,
+    "Reference Number": p.reference_number || "",
+    "Total Tickets": p.ticket_count,
+    Claimed: p.claimedCount,
+    Unclaimed: p.unclaimedCount,
+    Refunded: p.refunded_count,
+    "Claimed Numbers": p.claimedNumbers.map((n) => `#${n}`).join(" "),
+    "Submitted At": new Date(p.submitted_at).toLocaleString(),
+  }));
+  downloadCsv(
+    `customer-ledger-${new Date().toISOString().slice(0, 10)}.csv`,
+    rows,
+  );
+}
 export default function LedgerClient() {
   const [view, setView] = useState<"search" | "unclaimed">("search");
   const [phone, setPhone] = useState("");
@@ -179,30 +197,39 @@ export default function LedgerClient() {
         </div>
       )}
 
-      <div className="flex items-center gap-2 mb-6">
+      <div className="flex items-center gap-2 mb-6 flex-wrap justify-between">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => {
+              setView("search");
+              setSearched(false);
+              setPayments([]);
+            }}
+            className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+              view === "search"
+                ? "bg-[#6D35D8] text-white"
+                : "bg-[#131C2B] text-[#9AA7BC] border border-[#26344A]"
+            }`}
+          >
+            🔍 Search by phone
+          </button>
+          <button
+            onClick={loadUnclaimed}
+            className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+              view === "unclaimed"
+                ? "bg-[#D9A63A] text-[#0B111C]"
+                : "bg-[#131C2B] text-[#9AA7BC] border border-[#26344A]"
+            }`}
+          >
+            ⏳ Browse unclaimed ({stats?.totalUnclaimed || 0})
+          </button>
+        </div>
         <button
-          onClick={() => {
-            setView("search");
-            setSearched(false);
-            setPayments([]);
-          }}
-          className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
-            view === "search"
-              ? "bg-[#6D35D8] text-white"
-              : "bg-[#131C2B] text-[#9AA7BC] border border-[#26344A]"
-          }`}
+          onClick={handleExport}
+          disabled={payments.length === 0}
+          className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#D9A63A] to-[#F2C14E] text-[#0B111C] text-sm font-bold px-5 py-2.5 disabled:opacity-40 hover:opacity-90 transition-opacity"
         >
-          🔍 Search by phone
-        </button>
-        <button
-          onClick={loadUnclaimed}
-          className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
-            view === "unclaimed"
-              ? "bg-[#D9A63A] text-[#0B111C]"
-              : "bg-[#131C2B] text-[#9AA7BC] border border-[#26344A]"
-          }`}
-        >
-          ⏳ Browse unclaimed ({stats?.totalUnclaimed || 0})
+          ⬇ Export CSV
         </button>
       </div>
 

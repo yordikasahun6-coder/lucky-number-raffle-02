@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { downloadCsv } from "@/lib/exportCsv";
 
 type Entry = {
   number: number;
@@ -50,7 +51,20 @@ export default function RecordsClient() {
     e.preventDefault();
     load(search.trim());
   }
-
+  function handleExport() {
+    const rows = flatRows.map((row) => ({
+      "Ticket Number": row.number,
+      "Phone Number": row.phone_number,
+      "Customer Name": row.customer_name,
+      "Reference Number": row.reference_number || "",
+      "Payment Method": row.method || "",
+      "Claimed At": new Date(row.assigned_at).toLocaleString(),
+    }));
+    downloadCsv(
+      `claimed-tickets-${new Date().toISOString().slice(0, 10)}.csv`,
+      rows,
+    );
+  }
   function copyRef(text: string, key: string) {
     navigator.clipboard.writeText(text);
     setCopiedKey(key);
@@ -80,16 +94,25 @@ export default function RecordsClient() {
             View all successfully claimed tickets
           </p>
         </div>
-        <div className="rounded-2xl bg-[#131C2B] border border-[#26344A] px-5 py-3.5 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-[#29164F] flex items-center justify-center text-[#8B4DFF]">
-            📈
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="rounded-2xl bg-[#131C2B] border border-[#26344A] px-5 py-3.5 flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-[#29164F] flex items-center justify-center text-[#8B4DFF]">
+              📈
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-[#F5F7FA] leading-none">
+                {totalTickets}
+              </p>
+              <p className="text-[#9AA7BC] text-xs mt-1">Numbers claimed</p>
+            </div>
           </div>
-          <div>
-            <p className="text-2xl font-bold text-[#F5F7FA] leading-none">
-              {totalTickets}
-            </p>
-            <p className="text-[#9AA7BC] text-xs mt-1">Numbers claimed</p>
-          </div>
+          <button
+            onClick={handleExport}
+            disabled={flatRows.length === 0}
+            className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#D9A63A] to-[#F2C14E] text-[#0B111C] text-sm font-bold px-5 py-3 disabled:opacity-40 hover:opacity-90 transition-opacity"
+          >
+            ⬇ Export CSV
+          </button>
         </div>
       </div>
 
