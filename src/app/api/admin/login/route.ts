@@ -1,17 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
+import { verifyCredentials, createSession } from "@/lib/adminAuth";
 
 export async function POST(request: NextRequest) {
-  const { password } = await request.json();
+  const { username, password } = await request.json();
 
-  console.log("typed password:", JSON.stringify(password));
-  console.log("expected password:", JSON.stringify(process.env.ADMIN_PASSWORD));
+  const admin = await verifyCredentials(username || "", password);
 
-  if (password !== process.env.ADMIN_PASSWORD) {
-    return NextResponse.json({ error: "Incorrect password." }, { status: 401 });
+  if (!admin) {
+    return NextResponse.json(
+      { error: "Incorrect username or password." },
+      { status: 401 },
+    );
   }
 
-  const response = NextResponse.json({ success: true });
-  response.cookies.set("admin_session", process.env.ADMIN_SESSION_TOKEN!, {
+  const token = await createSession(admin.name, username || "owner");
+
+  const response = NextResponse.json({ success: true, name: admin.name });
+  response.cookies.set("admin_session", token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",

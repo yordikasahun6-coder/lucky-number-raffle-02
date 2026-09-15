@@ -15,6 +15,7 @@ const navItems = [
   { href: "/admin/screenshots", label: "Screenshots", icon: "🖼️" },
   { href: "/admin/accounts", label: "Payment Methods", icon: "💳" },
   { href: "/admin/support", label: "Support Team", icon: "🎧" },
+  { href: "/admin/team", label: "Team Access", icon: "👥" },
   { href: "/admin/prizes", label: "Prizes", icon: "🏆" },
   { href: "/admin/assets", label: "Site Images", icon: "🌄" },
   { href: "/admin/settings", label: "Settings", icon: "⚙️" },

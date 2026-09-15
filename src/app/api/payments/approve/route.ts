@@ -2,9 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { updateAdminTelegramStatus } from "@/lib/telegram";
 import { notifyCustomerTelegram } from "@/lib/telegram";
+import { validateSession } from "@/lib/adminAuth";
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
+
   const { payment_id, reference_number, action, ticket_count } = body;
 
   if (!payment_id || !action) {
@@ -13,6 +15,11 @@ export async function POST(request: NextRequest) {
       { status: 400 },
     );
   }
+
+  // Look up who is actually performing this action from their session cookie
+  const token = request.cookies.get("admin_session")?.value;
+  const session = await validateSession(token);
+  const reviewerName = session?.name || "Unknown";
 
   if (action === "reject") {
     const { data: payment } = await supabaseAdmin
@@ -28,7 +35,7 @@ export async function POST(request: NextRequest) {
       .update({
         status: "rejected",
         reviewed_at: new Date().toISOString(),
-        reviewed_by: "admin",
+        reviewed_by: reviewerName,
       })
       .eq("id", payment_id);
 
@@ -126,7 +133,7 @@ export async function POST(request: NextRequest) {
         reference_number: reference_number.trim(),
         ticket_count: count,
         reviewed_at: new Date().toISOString(),
-        reviewed_by: "admin",
+        reviewed_by: reviewerName,
       })
       .eq("id", payment_id);
 

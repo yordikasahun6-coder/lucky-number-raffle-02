@@ -1,17 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
+import { validateSession } from "@/lib/adminAuth";
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   if (
     request.nextUrl.pathname === "/admin/login" ||
-    request.nextUrl.pathname === "/api/admin/login" ||
-    request.nextUrl.pathname === "/api/admin/debug"
+    request.nextUrl.pathname === "/api/admin/login"
   ) {
     return NextResponse.next();
   }
-  const session = request.cookies.get("admin_session")?.value;
-  const isValid = session === process.env.ADMIN_SESSION_TOKEN;
 
-  if (isValid) {
+  const token = request.cookies.get("admin_session")?.value;
+  const session = await validateSession(token);
+
+  if (session) {
     return NextResponse.next();
   }
 

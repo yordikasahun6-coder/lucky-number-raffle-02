@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 export default function AdminLoginPage() {
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
@@ -19,11 +20,11 @@ export default function AdminLoginPage() {
     const res = await fetch("/api/admin/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ password }),
+      body: JSON.stringify({ username, password }),
     });
 
     if (!res.ok) {
-      setError("Incorrect password.");
+      setError("Incorrect username or password.");
       setLoading(false);
       return;
     }
@@ -108,6 +109,17 @@ export default function AdminLoginPage() {
             </div>
 
             <form onSubmit={handleSubmit}>
+              <label className="block text-[#A8B3C5] text-xs font-semibold tracking-wide mb-2">
+                USERNAME
+              </label>
+              <input
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Leave blank for Owner login"
+                className="w-full rounded-xl bg-[#070D18] border border-[#26344A] px-4 py-3.5 text-[#F5F7FA] text-sm placeholder-[#64748B] focus:outline-none focus:border-[#7C3AED] transition-colors mb-4"
+              />
+
               <label className="block text-[#A8B3C5] text-xs font-semibold tracking-wide mb-2">
                 PASSWORD
               </label>
