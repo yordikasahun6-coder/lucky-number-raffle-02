@@ -25,6 +25,7 @@ export async function GET(request: NextRequest) {
         number: number;
         reference_number: string | null;
         method: string | null;
+        reviewed_by: string | null;
         assigned_at: string;
       }[];
     }
