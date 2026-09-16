@@ -7,6 +7,7 @@ type Entry = {
   number: number;
   reference_number: string | null;
   method: string | null;
+  reviewed_by: string | null;
   assigned_at: string;
 };
 type Record = { phone_number: string; customer_name: string; entries: Entry[] };
@@ -225,6 +226,15 @@ export default function RecordsClient() {
                       </p>
                       <p className="text-[#F5F7FA] text-sm font-medium uppercase">
                         {row.method || "—"}
+                      </p>
+                    </div>
+
+                    <div className="hidden xl:block shrink-0">
+                      <p className="text-[#64748B] text-[10px] uppercase tracking-wide">
+                        Approved By
+                      </p>
+                      <p className="text-[#8B4DFF] text-sm font-medium">
+                        {row.reviewed_by || "—"}
                       </p>
                     </div>
 

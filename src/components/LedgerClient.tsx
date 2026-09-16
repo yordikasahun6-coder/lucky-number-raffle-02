@@ -9,6 +9,7 @@ type Payment = {
   phone_number: string;
   method: string;
   reference_number: string | null;
+  reviewed_by: string | null;
   ticket_count: number;
   refunded_count: number;
   claimedCount: number;
@@ -287,6 +288,12 @@ export default function LedgerClient() {
                   Ref: {p.reference_number || "—"}{" "}
                   <span className="mx-1">•</span>{" "}
                   {new Date(p.submitted_at).toLocaleDateString()}
+                  {p.reviewed_by && (
+                    <>
+                      <span className="mx-1">•</span> Approved by{" "}
+                      <span className="text-[#8B4DFF]">{p.reviewed_by}</span>
+                    </>
+                  )}
                 </p>
               </div>
               <div className="flex items-center gap-2">

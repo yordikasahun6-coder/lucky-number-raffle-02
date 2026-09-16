@@ -1,10 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { validateSession } from "@/lib/adminAuth";
+
+async function requireOwner(request: NextRequest) {
+  const token = request.cookies.get("admin_session")?.value;
+  const session = await validateSession(token);
+  return session?.name === "Owner";
+}
 
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  if (!(await requireOwner(request))) {
+    return NextResponse.json(
+      { error: "Only the Owner can manage team access." },
+      { status: 403 },
+    );
+  }
   const { id } = await params;
   const body = await request.json();
   const { error } = await supabaseAdmin
@@ -20,6 +33,12 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  if (!(await requireOwner(request))) {
+    return NextResponse.json(
+      { error: "Only the Owner can manage team access." },
+      { status: 403 },
+    );
+  }
   const { id } = await params;
   const { error } = await supabaseAdmin
     .from("admin_users")

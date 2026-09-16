@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import LogoutButton from "@/components/LogoutButton";
@@ -29,6 +29,14 @@ export default function AdminLayout({
 }) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [isOwner, setIsOwner] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/admin/session")
+      .then((res) => res.json())
+      .then((data) => setIsOwner(data.isOwner || false))
+      .catch(() => {});
+  }, []);
 
   if (pathname === "/admin/login") {
     return <>{children}</>;
@@ -59,30 +67,32 @@ export default function AdminLayout({
       </div>
 
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-        {navItems.map((item, i) => {
-          const active = pathname === item.href;
-          return (
-            <Link
-              key={`${item.href}-${i}`}
-              href={item.href}
-              onClick={() => setMobileOpen(false)}
-              className={`flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium transition-colors ${
-                active
-                  ? "bg-gradient-to-r from-[#6D35D8] to-[#6D35D8]/60 text-white"
-                  : "text-[#9AA7BC] hover:bg-[#131C2B] hover:text-[#F5F7FA]"
-              }`}
-            >
-              {item.isDot ? (
-                <span
-                  className={`w-2 h-2 rounded-full ${active ? "bg-white" : "bg-[#9B5CFF]"}`}
-                />
-              ) : (
-                <span className="text-base w-5 text-center">{item.icon}</span>
-              )}
-              {item.label}
-            </Link>
-          );
-        })}
+        {navItems
+          .filter((item) => item.href !== "/admin/team" || isOwner)
+          .map((item, i) => {
+            const active = pathname === item.href;
+            return (
+              <Link
+                key={`${item.href}-${i}`}
+                href={item.href}
+                onClick={() => setMobileOpen(false)}
+                className={`flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium transition-colors ${
+                  active
+                    ? "bg-gradient-to-r from-[#6D35D8] to-[#6D35D8]/60 text-white"
+                    : "text-[#9AA7BC] hover:bg-[#131C2B] hover:text-[#F5F7FA]"
+                }`}
+              >
+                {item.isDot ? (
+                  <span
+                    className={`w-2 h-2 rounded-full ${active ? "bg-white" : "bg-[#9B5CFF]"}`}
+                  />
+                ) : (
+                  <span className="text-base w-5 text-center">{item.icon}</span>
+                )}
+                {item.label}
+              </Link>
+            );
+          })}
       </nav>
 
       <div className="px-3 pb-4 border-t border-[#1C293C] pt-4 mt-2">

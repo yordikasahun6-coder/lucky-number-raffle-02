@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
   const { data: numbers, error } = await supabaseAdmin
     .from("numbers")
     .select(
-      "number, phone_number, assigned_at, payment_id, payments(reference_number, customer_name, method)",
+      "number, phone_number, assigned_at, payment_id, payments(reference_number, customer_name, method, reviewed_by)",
     )
     .eq("status", "taken")
     .order("assigned_at", { ascending: true });
@@ -46,6 +46,7 @@ export async function GET(request: NextRequest) {
       number: row.number,
       reference_number: payment?.reference_number || null,
       method: payment?.method || null,
+      reviewed_by: payment?.reviewed_by || null,
       assigned_at: row.assigned_at,
     });
   }

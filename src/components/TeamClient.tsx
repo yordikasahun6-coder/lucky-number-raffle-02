@@ -17,8 +17,12 @@ export default function TeamClient() {
   const [password, setPassword] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [isOwner, setIsOwner] = useState<boolean | null>(null);
 
   useEffect(() => {
+    fetch("/api/admin/session")
+      .then((res) => res.json())
+      .then((data) => setIsOwner(data.isOwner || false));
     load();
   }, []);
 
@@ -73,6 +77,19 @@ export default function TeamClient() {
     if (!confirm("Remove this team member's access?")) return;
     await fetch(`/api/admin/team/${id}`, { method: "DELETE" });
     setAdmins(admins.filter((a) => a.id !== id));
+  }
+
+  if (isOwner === false) {
+    return (
+      <main className="px-6 py-8 md:px-10 md:py-10">
+        <div className="rounded-2xl bg-[#351722] border border-[#EF476F]/40 p-6 text-center max-w-md mx-auto mt-10">
+          <p className="text-[#EF476F] font-semibold mb-1">Access restricted</p>
+          <p className="text-[#F5B8C6] text-sm">
+            Only the Owner can manage team access.
+          </p>
+        </div>
+      </main>
+    );
   }
 
   return (

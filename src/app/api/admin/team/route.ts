@@ -1,8 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { validateSession } from "@/lib/adminAuth";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const token = request.cookies.get("admin_session")?.value;
+  const session = await validateSession(token);
+  if (session?.name !== "Owner") {
+    return NextResponse.json(
+      { error: "Only the Owner can manage team access." },
+      { status: 403 },
+    );
+  }
+
   const { data, error } = await supabaseAdmin
     .from("admin_users")
     .select("id, username, display_name, active, created_at")
@@ -14,6 +24,15 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const token = request.cookies.get("admin_session")?.value;
+  const session = await validateSession(token);
+  if (session?.name !== "Owner") {
+    return NextResponse.json(
+      { error: "Only the Owner can manage team access." },
+      { status: 403 },
+    );
+  }
+
   const { username, password, display_name } = await request.json();
 
   if (!username || !password || !display_name) {
