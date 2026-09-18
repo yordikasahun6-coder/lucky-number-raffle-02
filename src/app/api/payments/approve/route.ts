@@ -42,6 +42,14 @@ export async function POST(request: NextRequest) {
     if (error)
       return NextResponse.json({ error: "Reject failed." }, { status: 500 });
 
+    await supabaseAdmin.from("approval_audit_log").insert({
+      payment_id,
+      action: "rejected",
+      admin_name: reviewerName,
+      phone_number: payment?.phone_number || "",
+      customer_name: payment?.customer_name || "",
+    });
+
     if (payment?.telegram_message_id) {
       await updateAdminTelegramStatus({
         messageId: payment.telegram_message_id,
@@ -146,6 +154,15 @@ export async function POST(request: NextRequest) {
         { status: 409 },
       );
     }
+    await supabaseAdmin.from("approval_audit_log").insert({
+      payment_id,
+      action: "approved",
+      admin_name: reviewerName,
+      phone_number: payment?.phone_number || "",
+      customer_name: payment?.customer_name || "",
+      ticket_count: count,
+      reference_number: reference_number.trim(),
+    });
 
     if (payment?.telegram_message_id) {
       await updateAdminTelegramStatus({

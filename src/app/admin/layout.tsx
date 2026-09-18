@@ -8,6 +8,7 @@ import LogoutButton from "@/components/LogoutButton";
 const navItems = [
   { href: "/admin", label: "Review Desk", icon: "📇" },
   { href: "/admin", label: "Pending Claims", icon: "●", isDot: true },
+  { href: "/admin/audit", label: "Audit Trail", icon: "📋" },
   { href: "/admin/analytics", label: "Analytics", icon: "📈" },
   { href: "/admin/ledger", label: "Customer Ledger", icon: "📒" },
   { href: "/admin/records", label: "Claimed Tickets", icon: "🎟️" },
