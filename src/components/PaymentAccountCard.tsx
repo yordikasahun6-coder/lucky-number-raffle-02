@@ -11,6 +11,7 @@ type Account = {
   account_number: string;
   logo_url: string | null;
   qr_code_url: string | null;
+  isOnline?: boolean | null;
 };
 
 export default function PaymentAccountCard({
