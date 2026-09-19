@@ -6,10 +6,11 @@ export const dynamic = "force-dynamic";
 export default async function Page() {
   const [
     { data: assets },
-    { data: accounts },
+    { data: rawAccounts },
     { data: settingsRows },
     { data: prizes },
     { data: supportMembers },
+    { data: availabilityRows },
   ] = await Promise.all([
     supabaseAdmin.from("site_assets").select("*"),
     supabaseAdmin
@@ -28,7 +29,24 @@ export default async function Page() {
       .select("*")
       .eq("active", true)
       .order("display_order", { ascending: true }),
+    supabaseAdmin.from("admin_availability").select("*"),
   ]);
+
+  const availMap: Record<string, boolean> = {};
+  for (const row of availabilityRows || [])
+    availMap[row.admin_name] = row.is_available;
+
+  const accounts = (rawAccounts || [])
+    .filter(
+      (a) =>
+        !a.assigned_admin_name || availMap[a.assigned_admin_name] !== false,
+    )
+    .map((a) => ({
+      ...a,
+      isOnline: a.assigned_admin_name
+        ? availMap[a.assigned_admin_name] !== false
+        : null,
+    }));
 
   const assetMap: Record<string, string | null> = {};
   (assets || []).forEach((a) => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 type Account = {
   id: string;
@@ -9,6 +9,7 @@ type Account = {
   account_number: string;
   logo_url: string | null;
   qr_code_url: string | null;
+  assigned_admin_name: string | null;
   active: boolean;
 };
 
@@ -25,10 +26,18 @@ export default function AccountManager({
   const [number, setNumber] = useState("");
   const [logo, setLogo] = useState<File | null>(null);
   const [qrCode, setQrCode] = useState<File | null>(null);
+  const [assignedAdmin, setAssignedAdmin] = useState("");
+  const [adminNames, setAdminNames] = useState<string[]>([]);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [qrPreview, setQrPreview] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    fetch("/api/admin/admin-names")
+      .then((res) => res.json())
+      .then((data) => setAdminNames(data.names || []));
+  }, []);
 
   function resetForm() {
     setEditingId(null);
@@ -39,6 +48,7 @@ export default function AccountManager({
     setQrCode(null);
     setLogoPreview(null);
     setQrPreview(null);
+    setAssignedAdmin("");
     setError("");
   }
 
@@ -49,6 +59,7 @@ export default function AccountManager({
     setNumber(a.account_number);
     setLogoPreview(a.logo_url);
     setQrPreview(a.qr_code_url);
+    setAssignedAdmin(a.assigned_admin_name || "");
     setLogo(null);
     setQrCode(null);
     window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
@@ -78,6 +89,7 @@ export default function AccountManager({
     formData.append("name", name);
     formData.append("account_holder", holder);
     formData.append("account_number", number);
+    formData.append("assigned_admin_name", assignedAdmin);
     if (logo) formData.append("logo", logo);
     if (qrCode) formData.append("qr_code", qrCode);
 
@@ -188,6 +200,11 @@ export default function AccountManager({
                   ✓ QR code attached
                 </p>
               )}
+              {a.assigned_admin_name && (
+                <p className="text-[#8B4DFF] text-xs mt-0.5">
+                  👤 Assigned to {a.assigned_admin_name}
+                </p>
+              )}
             </div>
 
             <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
@@ -238,6 +255,26 @@ export default function AccountManager({
 
         <div className="grid md:grid-cols-2 gap-6">
           <div className="space-y-5">
+            <div>
+              <label className="block text-sm text-[#F5F7FA] mb-1.5">
+                Assign to admin{" "}
+                <span className="text-[#64748B]">
+                  (optional — controls the online/offline dot)
+                </span>
+              </label>
+              <select
+                value={assignedAdmin}
+                onChange={(e) => setAssignedAdmin(e.target.value)}
+                className="w-full rounded-xl bg-[#080D16] border border-[#26344A] px-4 py-2.5 text-[#F5F7FA] text-sm focus:outline-none focus:border-[#6D35D8]"
+              >
+                <option value="">Always shown (no toggle)</option>
+                {adminNames.map((n) => (
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
+                ))}
+              </select>
+            </div>
             <div>
               <label className="block text-sm text-[#F5F7FA] mb-1.5">
                 Method name

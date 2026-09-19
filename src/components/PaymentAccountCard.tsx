@@ -32,15 +32,20 @@ export default function PaymentAccountCard({
         onClick={() => setOpen(!open)}
         className="press-scale w-full flex items-center gap-3 px-5 py-4 hover:bg-[#FBF8EF] transition text-left"
       >
-        {account.logo_url ? (
-          <img
-            src={account.logo_url}
-            alt={account.name}
-            className="w-9 h-9 object-contain shrink-0"
-          />
-        ) : (
-          <div className="w-9 h-9 rounded-full bg-[#E7F5EC] shrink-0" />
-        )}
+        <div className="relative shrink-0">
+          {account.logo_url ? (
+            <img
+              src={account.logo_url}
+              alt={account.name}
+              className="w-9 h-9 object-contain"
+            />
+          ) : (
+            <div className="w-9 h-9 rounded-full bg-[#E7F5EC]" />
+          )}
+          {account.isOnline === true && (
+            <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-[#22C55E] border-2 border-white" />
+          )}
+        </div>
         <span className="font-bold text-[#14231C] text-sm flex-1">
           {account.name}
         </span>

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import LogoutButton from "@/components/LogoutButton";
+import AvailabilityToggle from "@/components/AvailabilityToggle";
 
 const navItems = [
   { href: "/admin", label: "Review Desk", icon: "📇" },
@@ -97,6 +98,7 @@ export default function AdminLayout({
       </nav>
 
       <div className="px-3 pb-4 border-t border-[#1C293C] pt-4 mt-2">
+        <AvailabilityToggle />
         <div className="flex items-center gap-3 px-2 mb-2">
           <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#9B5CFF] to-[#6D35D8] flex items-center justify-center text-white text-sm font-bold">
             A
