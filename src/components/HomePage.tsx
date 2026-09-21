@@ -23,6 +23,8 @@ type Account = {
   account_number: string;
   logo_url: string | null;
   qr_code_url: string | null;
+  assigned_admin_name: string | null;
+  isOnline: boolean | null;
 };
 type Settings = {
   ticket_price: number;

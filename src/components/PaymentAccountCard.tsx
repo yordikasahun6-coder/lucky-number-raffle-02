@@ -11,6 +11,7 @@ type Account = {
   account_number: string;
   logo_url: string | null;
   qr_code_url: string | null;
+  assigned_admin_name?: string | null;
   isOnline?: boolean | null;
 };
 
@@ -38,17 +39,26 @@ export default function PaymentAccountCard({
             <img
               src={account.logo_url}
               alt={account.name}
-              className="w-9 h-9 object-contain"
+              className="w-9 h-9 object-contain rounded-full"
             />
           ) : (
             <div className="w-9 h-9 rounded-full bg-[#E7F5EC]" />
           )}
           {account.isOnline === true && (
-            <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-[#22C55E] border-2 border-white" />
+            <span
+              className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-[#22C55E] border-2 border-white"
+              title="Available now"
+            />
           )}
         </div>
+
         <span className="font-bold text-[#14231C] text-sm flex-1">
           {account.name}
+          {account.isOnline === true && (
+            <span className="ml-2 text-[#22C55E] text-[10px] font-semibold align-middle">
+              ● Online
+            </span>
+          )}
         </span>
         <span
           className={`text-[#E0A72E] text-xs transition-transform duration-300 ${open ? "rotate-180" : ""}`}
