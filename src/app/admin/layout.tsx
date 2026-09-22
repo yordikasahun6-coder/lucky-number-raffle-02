@@ -12,6 +12,7 @@ const navItems = [
   { href: "/admin/audit", label: "Audit Trail", icon: "📋" },
   { href: "/admin/analytics", label: "Analytics", icon: "📈" },
   { href: "/admin/ledger", label: "Customer Ledger", icon: "📒" },
+  { href: "/admin/notifications", label: "My Notifications", icon: "🔔" },
   { href: "/admin/records", label: "Claimed Tickets", icon: "🎟️" },
   { href: "/admin/draw", label: "Draw Winner", icon: "🎉" },
   { href: "/admin/screenshots", label: "Screenshots", icon: "🖼️" },

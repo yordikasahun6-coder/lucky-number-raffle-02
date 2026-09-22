@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
     const { data: payment } = await supabaseAdmin
       .from("payments")
       .select(
-        "customer_name, phone_number, method, telegram_message_id, screenshot_url, telegram_chat_id",
+        "customer_name, phone_number, method, screenshot_url, telegram_chat_id",
       )
       .eq("id", payment_id)
       .single();
@@ -50,16 +50,14 @@ export async function POST(request: NextRequest) {
       customer_name: payment?.customer_name || "",
     });
 
-    if (payment?.telegram_message_id) {
-      await updateAdminTelegramStatus({
-        messageId: payment.telegram_message_id,
-        hasPhoto: !!payment.screenshot_url,
-        customerName: payment.customer_name,
-        phoneNumber: payment.phone_number,
-        method: payment.method,
-        status: "rejected",
-      });
-    }
+    await updateAdminTelegramStatus({
+      paymentId: payment_id,
+      customerName: payment?.customer_name || "",
+      phoneNumber: payment?.phone_number || "",
+      method: payment?.method || "",
+      status: "rejected",
+      reviewerName,
+    });
 
     if (payment?.telegram_chat_id) {
       await notifyCustomerTelegram({
@@ -129,7 +127,7 @@ export async function POST(request: NextRequest) {
     const { data: payment } = await supabaseAdmin
       .from("payments")
       .select(
-        "customer_name, phone_number, method, telegram_message_id, screenshot_url, telegram_chat_id",
+        "customer_name, phone_number, method, screenshot_url, telegram_chat_id",
       )
       .eq("id", payment_id)
       .single();
@@ -154,6 +152,7 @@ export async function POST(request: NextRequest) {
         { status: 409 },
       );
     }
+
     await supabaseAdmin.from("approval_audit_log").insert({
       payment_id,
       action: "approved",
@@ -164,18 +163,16 @@ export async function POST(request: NextRequest) {
       reference_number: reference_number.trim(),
     });
 
-    if (payment?.telegram_message_id) {
-      await updateAdminTelegramStatus({
-        messageId: payment.telegram_message_id,
-        hasPhoto: !!payment.screenshot_url,
-        customerName: payment.customer_name,
-        phoneNumber: payment.phone_number,
-        method: payment.method,
-        status: "approved",
-        referenceNumber: reference_number.trim(),
-        ticketCount: count,
-      });
-    }
+    await updateAdminTelegramStatus({
+      paymentId: payment_id,
+      customerName: payment?.customer_name || "",
+      phoneNumber: payment?.phone_number || "",
+      method: payment?.method || "",
+      status: "approved",
+      referenceNumber: reference_number.trim(),
+      ticketCount: count,
+      reviewerName,
+    });
 
     if (payment?.telegram_chat_id) {
       await notifyCustomerTelegram({

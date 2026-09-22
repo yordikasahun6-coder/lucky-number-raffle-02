@@ -173,6 +173,49 @@ export async function POST(request: NextRequest) {
   const message = update.message;
   if (!message) return NextResponse.json({ ok: true });
 
+  const rawText: string = message.text || "";
+
+  // Admin linking: /link CODE — must be handled before the customer
+  // purchase flow so it never accidentally starts a ticket session.
+  if (rawText.trim().toUpperCase().startsWith("/LINK")) {
+    const parts = rawText.trim().split(/\s+/);
+    const code = (parts[1] || "").toUpperCase();
+    const chatId = message.chat.id;
+
+    if (!code) {
+      await sendBotMessage(
+        chatId,
+        "Please send /link followed by your code, e.g. /link AB12CD34",
+      );
+      return NextResponse.json({ ok: true });
+    }
+
+    const { data: linkRow } = await supabaseAdmin
+      .from("telegram_admin_links")
+      .select("*")
+      .eq("link_code", code)
+      .single();
+
+    if (!linkRow) {
+      await sendBotMessage(
+        chatId,
+        "That code doesn't match — please generate a new one from the admin page and try again.",
+      );
+      return NextResponse.json({ ok: true });
+    }
+
+    await supabaseAdmin
+      .from("telegram_admin_links")
+      .update({ chat_id: chatId, linked_at: new Date().toISOString() })
+      .eq("admin_name", linkRow.admin_name);
+
+    await sendBotMessage(
+      chatId,
+      `✅ Connected! You'll now receive new payment notifications here as ${linkRow.admin_name}.`,
+    );
+    return NextResponse.json({ ok: true });
+  }
+
   const chatId = message.chat.id;
   const text: string = message.text || "";
   const photo = message.photo;
@@ -193,26 +236,6 @@ export async function POST(request: NextRequest) {
 
   if (!session) {
     await startSession(chatId);
-    return NextResponse.json({ ok: true });
-  }
-
-  if (session.step === "name") {
-    if (!text.trim()) {
-      await sendBotMessage(chatId, "Please type your full name as text.");
-      return NextResponse.json({ ok: true });
-    }
-    await supabaseAdmin
-      .from("telegram_sessions")
-      .update({
-        name: text.trim(),
-        step: "phone",
-        updated_at: new Date().toISOString(),
-      })
-      .eq("chat_id", chatId);
-    await sendBotMessage(
-      chatId,
-      `Thanks, ${text.trim()}!\n\nNow, what's your phone number? (e.g. 0912345678)`,
-    );
     return NextResponse.json({ ok: true });
   }
 
@@ -347,7 +370,8 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (payment) {
-      const telegramMessageId = await notifyAdminTelegram({
+      await notifyAdminTelegram({
+        paymentId: payment.id,
         customerName: payment.customer_name,
         phoneNumber: payment.phone_number,
         method: payment.method,
@@ -355,12 +379,10 @@ export async function POST(request: NextRequest) {
         screenshotFilename: "screenshot.jpg",
       });
 
-      if (telegramMessageId) {
-        await supabaseAdmin
-          .from("payments")
-          .update({ telegram_message_id: telegramMessageId })
-          .eq("id", payment.id);
-      }
+      await sendBotMessage(
+        chatId,
+        "✅ Got it! Your submission has been received and is pending review.\n\nWe'll notify you here once it's approved.",
+      );
     }
 
     await supabaseAdmin

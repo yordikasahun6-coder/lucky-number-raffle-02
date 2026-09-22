@@ -1,17 +1,17 @@
-export async function notifyAdminTelegram(params: {
-  customerName: string;
-  phoneNumber: string;
-  method: string;
-  screenshotBuffer?: Buffer | null;
-  screenshotFilename?: string;
-}): Promise<string | null> {
-  const token = process.env.TELEGRAM_BOT_TOKEN;
-  const chatId = process.env.TELEGRAM_ADMIN_CHAT_ID;
+import { supabaseAdmin } from "@/lib/supabase/admin";
 
-  if (!token || !chatId) {
-    console.log("Telegram not configured — skipping notification.");
-    return null;
-  }
+async function sendToChat(
+  chatId: number,
+  params: {
+    customerName: string;
+    phoneNumber: string;
+    method: string;
+    screenshotBuffer?: Buffer | null;
+    screenshotFilename?: string;
+  },
+): Promise<{ messageId: string; hasPhoto: boolean } | null> {
+  const token = process.env.TELEGRAM_BOT_TOKEN;
+  if (!token) return null;
 
   const caption =
     `🔔 *New payment submitted*\n\n` +
@@ -24,7 +24,7 @@ export async function notifyAdminTelegram(params: {
   try {
     if (params.screenshotBuffer) {
       const formData = new FormData();
-      formData.append("chat_id", chatId);
+      formData.append("chat_id", String(chatId));
       formData.append("caption", caption);
       formData.append("parse_mode", "Markdown");
       formData.append(
@@ -35,13 +35,11 @@ export async function notifyAdminTelegram(params: {
 
       const res = await fetch(
         `https://api.telegram.org/bot${token}/sendPhoto`,
-        {
-          method: "POST",
-          body: formData,
-        },
+        { method: "POST", body: formData },
       );
       const data = await res.json();
-      return data?.result?.message_id ? String(data.result.message_id) : null;
+      if (!data.ok) return null;
+      return { messageId: String(data.result.message_id), hasPhoto: true };
     } else {
       const res = await fetch(
         `https://api.telegram.org/bot${token}/sendMessage`,
@@ -58,38 +56,84 @@ export async function notifyAdminTelegram(params: {
         },
       );
       const data = await res.json();
-      return data?.result?.message_id ? String(data.result.message_id) : null;
+      if (!data.ok) return null;
+      return { messageId: String(data.result.message_id), hasPhoto: false };
     }
   } catch (err) {
-    console.log("Telegram notify failed:", err);
+    console.log("sendToChat failed:", err);
     return null;
   }
 }
 
+export async function notifyAdminTelegram(params: {
+  paymentId: string;
+  customerName: string;
+  phoneNumber: string;
+  method: string;
+  screenshotBuffer?: Buffer | null;
+  screenshotFilename?: string;
+}) {
+  const { data: links } = await supabaseAdmin
+    .from("telegram_admin_links")
+    .select("admin_name, chat_id")
+    .not("chat_id", "is", null);
+
+  let recipients = links || [];
+
+  // If nobody has linked their own Telegram yet, fall back to the
+  // original single-admin env var so notifications never silently stop.
+  if (recipients.length === 0 && process.env.TELEGRAM_ADMIN_CHAT_ID) {
+    recipients = [
+      {
+        admin_name: "Owner",
+        chat_id: Number(process.env.TELEGRAM_ADMIN_CHAT_ID),
+      },
+    ];
+  }
+
+  for (const r of recipients) {
+    const result = await sendToChat(r.chat_id!, params);
+    if (result) {
+      await supabaseAdmin.from("payment_notification_messages").insert({
+        payment_id: params.paymentId,
+        admin_name: r.admin_name,
+        chat_id: r.chat_id,
+        message_id: result.messageId,
+        has_photo: result.hasPhoto,
+      });
+    }
+  }
+}
+
 export async function updateAdminTelegramStatus(params: {
-  messageId: string;
-  hasPhoto: boolean;
+  paymentId: string;
   customerName: string;
   phoneNumber: string;
   method: string;
   status: "approved" | "rejected";
   referenceNumber?: string | null;
   ticketCount?: number;
+  reviewerName: string;
 }) {
   const token = process.env.TELEGRAM_BOT_TOKEN;
-  const chatId = process.env.TELEGRAM_ADMIN_CHAT_ID;
+  if (!token) return;
 
-  if (!token || !chatId) return;
+  const { data: messages } = await supabaseAdmin
+    .from("payment_notification_messages")
+    .select("*")
+    .eq("payment_id", params.paymentId);
 
-  const statusLine =
-    params.status === "approved"
-      ? `Status: ✅ *Approved*${params.referenceNumber ? ` (ref: ${params.referenceNumber})` : ""}`
-      : `Status: ❌ *Rejected*`;
+  if (!messages || messages.length === 0) return;
 
   const ticketLine =
     params.status === "approved" && params.ticketCount
       ? `\n🎟️ Tickets granted: *${params.ticketCount}*\n`
       : "";
+
+  const statusLine =
+    params.status === "approved"
+      ? `Status: ✅ *Approved by ${params.reviewerName}*${params.referenceNumber ? ` (ref: ${params.referenceNumber})` : ""}`
+      : `Status: ❌ *Rejected by ${params.reviewerName}*`;
 
   const newText =
     (params.status === "approved"
@@ -101,24 +145,26 @@ export async function updateAdminTelegramStatus(params: {
     `${ticketLine}\n` +
     `${statusLine}`;
 
-  try {
-    const endpoint = params.hasPhoto ? "editMessageCaption" : "editMessageText";
-    const bodyKey = params.hasPhoto ? "caption" : "text";
-
-    await fetch(`https://api.telegram.org/bot${token}/${endpoint}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        chat_id: chatId,
-        message_id: Number(params.messageId),
-        [bodyKey]: newText,
-        parse_mode: "Markdown",
-      }),
-    });
-  } catch (err) {
-    console.log("Telegram status update failed:", err);
+  for (const m of messages) {
+    try {
+      const endpoint = m.has_photo ? "editMessageCaption" : "editMessageText";
+      const bodyKey = m.has_photo ? "caption" : "text";
+      await fetch(`https://api.telegram.org/bot${token}/${endpoint}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: m.chat_id,
+          message_id: Number(m.message_id),
+          [bodyKey]: newText,
+          parse_mode: "Markdown",
+        }),
+      });
+    } catch (err) {
+      console.log("Telegram status update failed for", m.admin_name, err);
+    }
   }
 }
+
 export async function notifyCustomerTelegram(params: {
   chatId: number;
   phone: string;
@@ -184,6 +230,7 @@ export async function notifyCustomerTelegram(params: {
     }
   }
 }
+
 export async function notifyCustomerNumberClaimed(params: {
   chatId: number;
   ticketNumber: number;

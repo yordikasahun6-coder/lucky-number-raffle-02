@@ -123,20 +123,14 @@ export async function POST(request: NextRequest) {
       screenshotBuffer = Buffer.from(await screenshot.arrayBuffer());
     }
 
-    const telegramMessageId = await notifyAdminTelegram({
+    await notifyAdminTelegram({
+      paymentId: data.id,
       customerName: customer_name,
       phoneNumber: phone_number,
       method: account.name,
       screenshotBuffer,
       screenshotFilename: screenshot?.name,
     });
-
-    if (telegramMessageId) {
-      await supabaseAdmin
-        .from("payments")
-        .update({ telegram_message_id: telegramMessageId })
-        .eq("id", data.id);
-    }
 
     return NextResponse.json({ success: true, payment: data });
   } catch {
