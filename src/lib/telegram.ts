@@ -78,17 +78,22 @@ export async function notifyAdminTelegram(params: {
     .select("admin_name, chat_id")
     .not("chat_id", "is", null);
 
-  let recipients = links || [];
+  const recipients: { admin_name: string; chat_id: number }[] = (
+    links || []
+  ).map((l) => ({
+    admin_name: l.admin_name,
+    chat_id: l.chat_id!,
+  }));
 
-  // If nobody has linked their own Telegram yet, fall back to the
-  // original single-admin env var so notifications never silently stop.
-  if (recipients.length === 0 && process.env.TELEGRAM_ADMIN_CHAT_ID) {
-    recipients = [
-      {
-        admin_name: "Owner",
-        chat_id: Number(process.env.TELEGRAM_ADMIN_CHAT_ID),
-      },
-    ];
+  // The Owner's original chat ID (set up before this multi-admin system
+  // existed) must ALWAYS receive notifications too — not just as a
+  // fallback when nobody else has linked. Deduplicated by chat_id so
+  // Owner never gets double-notified if they later link officially too.
+  const legacyChatId = process.env.TELEGRAM_ADMIN_CHAT_ID
+    ? Number(process.env.TELEGRAM_ADMIN_CHAT_ID)
+    : null;
+  if (legacyChatId && !recipients.some((r) => r.chat_id === legacyChatId)) {
+    recipients.push({ admin_name: "Owner", chat_id: legacyChatId });
   }
 
   for (const r of recipients) {
